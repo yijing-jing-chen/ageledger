@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.zip
+*.xml
+*.sqlite
+*.db
+data/private/
+
+# keep regenerable synthetic demo fixtures
+!data/synthetic/*.zip
+ageledger.egg-info/
+web/_dev.html

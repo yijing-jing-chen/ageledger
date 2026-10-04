@@ -1,0 +1,456 @@
+# ageledger lever rules — the lookup table Jing owns.
+# The engine (engine.py) is generic; every threshold, HR and citation lives here.
+# Conventions:
+#   bands: lo inclusive, hi exclusive (null = open). `hi_inclusive: true` closes the upper edge.
+#   hr in a band is relative to the source paper's own reference; the engine divides by the
+#   reference band's hr, so hr_vs_reference = band.hr / reference.hr.
+#   Anything that is OUR choice rather than a published number carries `assumption: true` + text,
+#   and the text surfaces in the ledger output whenever it applied.
+
+gompertz_mrdt_years: 8.0
+gompertz_mrdt_meta:
+  assumption: true
+  text: "Gompertz MRDT = 8.0 years — mortality-rate doubling time; lit. range 7–10; same framing WHOOP describes"
+
+# Composite effective age (ageledger/composite.py). Each lever's years_vs_population is measured
+# against a POPULATION-TYPICAL value (so the total can go either way); `years`/`years_recoverable`
+# keep measuring against the best band.
+composite:
+  independence_assumption:
+    assumption: true
+    text: "Levers summed as if independent; correlated levers (steps↔VO2max, RHR↔VO2max) overstate the total. WHOOP de-duplicates overlap with unpublished weights; we do not"
+  min_levers: 2
+  trend_step_days: 30
+  trend_min_history_days: 120
+  trend_min_window_days: 90
+  citation:
+    short: "Gompertz composite of published all-cause hazard ratios — the framing WHOOP describes for WHOOP Age (Healthspan, 2025)"
+    url: "https://www.whoop.com/thelocker/healthspan/"
+
+levers:
+
+  # ------------------------------------------------------------------ 1. steps
+  - key: steps
+    label: Daily steps
+    input: steps
+    unit: steps/day
+    window_days: 90
+    aggregate: mean
+    min_days: 14
+    scoring: bands
+    bands:
+      - {name: "Q1 (3,553 median)",  lo: null, hi: 4677, hr: 1.00}
+      - {name: "Q2 (5,801 median)",  lo: 4677, hi: 6822, hr: 0.60}
+      - {name: "Q3 (7,842 median)",  lo: 6822, hi: 9372, hr: 0.55}
+      - {name: "Q4 (10,901 median)", lo: 9372, hi: null, hr: 0.47}
+    reference_band: "Q4 (10,901 median)"
+    population_hr: 0.574
+    population_label: "Q2/Q3 boundary (HR 0.574 vs Q1)"
+    population_assumption: {assumption: true, text: "Steps population-typical = Q2/Q3 boundary; HR 0.574 is the geometric mean of Q2 0.60 and Q3 0.55"}
+    age_dependent:
+      - age_min: 60
+        age_max: null
+        bands:
+          - {name: "Q1 (3,553 median)",          lo: null, hi: 4677, hr: 1.00}
+          - {name: "Q2 (5,801 median)",          lo: 4677, hi: 6822, hr: 0.60}
+          - {name: "Q3 below 7,000 plateau",     lo: 6822, hi: 7000, hr: 0.55}
+          - {name: "≥7,000 (age ≥60 plateau)",   lo: 7000, hi: null, hr: 0.47}
+        reference_band: "≥7,000 (age ≥60 plateau)"
+        population_hr: 0.574
+        population_label: "Q2/Q3 boundary (HR 0.574 vs Q1)"
+        population_assumption: {assumption: true, text: "Steps population-typical = Q2/Q3 boundary; HR 0.574 is the geometric mean of Q2 0.60 and Q3 0.55"}
+        rule_suffix: "age ≥60: plateau 6–8k, ≥7,000 treated as reference"
+        assumptions:
+          - {assumption: true, text: "Age ≥60: ≥7,000 steps/day treated as the reference band (Paluch reports a 6–8k plateau for ≥60y; 7,000 is our point inside it, given Q4 HR 0.47)"}
+    age_unknown_assumption: {assumption: true, text: "Age not in profile — under-60 bands used (stricter reference, Q4 ≥9,372)"}
+    citation:
+      short: "Paluch 2022, Lancet Public Health"
+      doi: "10.1016/S2468-2667(21)00302-9"
+      url: "https://doi.org/10.1016/S2468-2667(21)00302-9"
+    rule_text: >-
+      90-day mean steps placed in Paluch 2022 quartiles (15 cohorts, n=47,471; quartile medians
+      3,553 / 5,801 / 7,842 / 10,901; HR vs Q1 1.00 / 0.60 / 0.55 / 0.47). HR relative to Q4.
+      Plateau 8–10k for age <60, 6–8k for age ≥60.
+    assumptions:
+      - {assumption: true, text: "Quartile cut points (4,677 / 6,822 / 9,372) are midpoints between the published quartile medians — Paluch reports medians, not boundaries"}
+    confidence: high
+
+  # ------------------------------------------------------------------ 2. resting heart rate
+  - key: rhr
+    label: Resting heart rate
+    input: rhr
+    unit: bpm
+    window_days: 90
+    aggregate: mean
+    min_days: 14
+    scoring: exponential
+    formula:
+      base: 1.09            # RR per +10 bpm, all-cause (Zhang 2016)
+      per: 10
+      reference_value: 60
+      floor: 45             # linear-on-log from 45 bpm in the source
+      population_reference_value: 70   # composite (effective age) reference — see population_assumption
+    display_bands:          # labels only; HR comes from the continuous formula
+      - {name: "<60 bpm",    lo: null, hi: 60}
+      - {name: "60–80 bpm",  lo: 60,   hi: 80, hi_inclusive: true}
+      - {name: ">80 bpm",    lo: 80,   hi: null}
+    reference_band: "60 bpm"
+    population_assumption: {assumption: true, text: "RHR population-typical = 70 bpm (adult population-typical resting HR; Zhang 2016's modal category is 60–80 bpm)"}
+    citation:
+      short: "Zhang 2016, CMAJ"
+      doi: "10.1503/cmaj.150535"
+      url: "https://doi.org/10.1503/cmaj.150535"
+    rule_text: >-
+      90-day mean RHR; HR = 1.09 ^ ((RHR − 60) / 10), RHR floored at 45 bpm (Zhang 2016 meta-analysis,
+      46 studies, 1.25M participants: RR 1.09 per +10 bpm all-cause, linear from 45 bpm; categorical
+      60–80 vs <60 RR 1.12, >80 RR 1.45).
+    assumptions:
+      - {assumption: true, text: "Reference point 60 bpm for the continuous RHR curve (floor 45 bpm)"}
+    confidence: high
+    trend:
+      min_span_days: 180
+      recent_days: 90
+      prior_days: 90
+      min_days_each: 14
+      flag_delta: 5
+      note: >-
+        RHR drift: last-90-day mean is {delta:+.1f} bpm vs the prior 90 days. Rises of this kind track
+        mortality (Nauman 2011 JAMA 306:2579 — RHR rising from <70 to >85 over 10 years, HR 1.9). Note only; no years.
+      citation:
+        short: "Nauman 2011, JAMA"
+        doi: "10.1001/jama.2011.1826"
+        ref: "JAMA 2011;306(23):2579"
+
+  # ------------------------------------------------------------------ 3. sleep duration
+  - key: sleep_duration
+    label: Sleep duration
+    input: sleep_min
+    unit: min/night
+    window_days: 90
+    aggregate: mean
+    min_days: 14
+    scoring: bands
+    bands:
+      - {name: "short (<7h)",  lo: null, hi: 420, hr: 1.12}
+      - {name: "7–9h",         lo: 420,  hi: 540, hi_inclusive: true, hr: 1.00,
+         assumption: true, assumption_text: "Upper edge of the reference band set at 9h (source's long category is >8–9h); 9h chosen to be conservative"}
+      - {name: "long (>9h)",   lo: 540,  hi: null, hr: 1.30, lo_exclusive: true,
+         assumption: true, assumption_text: "Upper edge of the reference band set at 9h (source's long category is >8–9h); 9h chosen to be conservative"}
+    reference_band: "7–9h"
+    population_band: "7–9h"
+    population_assumption: {assumption: true, text: "Sleep duration population-typical = the 7–9h band (HR 1.00); population median sleep is ~7h, inside the typical band"}
+    citation:
+      short: "Cappuccio 2010, Sleep"
+      doi: "10.1093/sleep/33.5.585"
+      ref: "Sleep 2010;33(5):585"
+    rule_text: >-
+      90-day mean asleep minutes; Cappuccio 2010 meta-analysis: short (<7h) RR 1.12, long (>8–9h) RR 1.30,
+      reference 7–8h. Bands: <420 min 1.12; 420–540 min 1.00; >540 min 1.30.
+    notes:
+      - "Source studies used self-reported sleep; wearable asleep-time typically runs ~30–60 min below self-reported / in-bed time, so a wearable 6h40 may correspond to a self-reported ~7h+."
+    assumptions: []
+    confidence: medium
+
+  # ------------------------------------------------------------------ 4. sleep regularity (SRI)
+  - key: sleep_regularity
+    label: Sleep regularity (SRI)
+    input: [sleep_onset, sleep_offset]
+    unit: SRI
+    window_days: 90
+    aggregate: sri
+    min_days: 14
+    scoring: bands
+    bands:
+      - {name: "least regular (SRI <60)", lo: null, hi: 60, hr: 1.30,
+         assumption: true, assumption_text: "SRI <60 HR 1.30 — geometric middle of the published 1.25–1.92 range; cut point assumed"}
+      - {name: "SRI 60–75",               lo: 60,   hi: 75, hr: 1.10,
+         assumption: true, assumption_text: "SRI 60–75 HR 1.10 — assumed intermediate band"}
+      - {name: "regular (SRI ≥75)",       lo: 75,   hi: null, hr: 1.00,
+         assumption: true, assumption_text: "SRI ≥75 treated as reference — cut point assumed"}
+    reference_band: "regular (SRI ≥75)"
+    population_band: "SRI 60–75"
+    population_assumption: {assumption: true, text: "Sleep regularity population-typical = the middle band (SRI 60–75); the cut points themselves are assumed"}
+    citation:
+      short: "Windred 2024, Sleep"
+      doi: "10.1093/sleep/zsad253"
+      url: "https://doi.org/10.1093/sleep/zsad253"
+    method_citation:
+      short: "Phillips 2017, Sci Rep (SRI definition)"
+      doi: "10.1038/s41598-017-03171-4"
+    rule_text: >-
+      Sleep Regularity Index = 200 × P(same sleep/wake state at t and t+24h) − 100, on a 1-minute grid
+      built from sleep_onset/sleep_offset of consecutive nights in the last 90 days (needs ≥14 nights).
+      Windred 2024 (UK Biobank): least-regular quintile vs quintiles 2–5 → 20–48% lower mortality in the
+      more regular groups. Quintile cut points were NOT available to us; the SRI cut points 60 / 75 and
+      their HRs are ASSUMED pending the paper's supplementary table.
+    assumptions:
+      - {assumption: true, text: "SRI band cut points (60, 75) are assumed pending Windred 2024's supplementary quintile table"}
+    confidence: low
+
+  # ------------------------------------------------------------------ 5. VO2max
+  - key: vo2max
+    label: VO2max (cardiorespiratory fitness)
+    input: vo2max
+    unit: ml/kg/min
+    window_days: 90
+    aggregate: median
+    min_days: 3
+    scoring: norm_tier
+    requires_profile: [age_years, sex]
+    norms: vo2max_norms
+    tiers:   # by age/sex percentile; HR relative to above_avg
+      - {name: low,       pct_lo: null, pct_hi: 25,   hr: 2.00, assumption: true,
+         assumption_text: "Tier HR low = 2.0 — Mandsager published only low-vs-elite 5.04; 2.0 is a conservative stand-in vs above-average"}
+      - {name: below_avg, pct_lo: 25,   pct_hi: 50,   hr: 1.41, assumption: true,
+         assumption_text: "Tier HR below_avg = 1.41 — published below-avg vs above-avg comparison, applied directly as HR vs the above_avg reference"}
+      - {name: above_avg, pct_lo: 50,   pct_hi: 75,   hr: 1.00, assumption: true,
+         assumption_text: "above_avg chosen as the VO2max reference tier (Mandsager's own reference is elite)"}
+      - {name: high,      pct_lo: 75,   pct_hi: 97.7, hr: 0.85, assumption: true,
+         assumption_text: "Tier HR high = 0.85 vs above-average — assumption (published 0.77 is elite vs high, a different contrast)"}
+      - {name: elite,     pct_lo: 97.7, pct_hi: null, hr: 0.70, assumption: true,
+         assumption_text: "Tier HR elite = 0.70 vs above-average — assumption"}
+    reference_band: above_avg
+    population_hr: 1.187
+    population_label: "50th percentile (below_avg/above_avg boundary)"
+    population_assumption: {assumption: true, text: "VO2max population-typical = 50th percentile, the below_avg/above_avg boundary; HR 1.187 is the geometric mean of 1.41 and 1.00"}
+    citation:
+      short: "Mandsager 2018, JAMA Netw Open"
+      doi: "10.1001/jamanetworkopen.2018.3605"
+      url: "https://doi.org/10.1001/jamanetworkopen.2018.3605"
+    rule_text: >-
+      90-day median device VO2max placed in an age/sex percentile tier (low <25th, below-avg 25–49th,
+      above-avg 50–74th, high 75–97.6th, elite ≥97.7th; Mandsager 2018, 122,007 treadmill tests). HR relative
+      to above-average. Published: low vs elite adjusted HR 5.04; below-avg vs above-avg 1.41; elite vs high 0.77.
+    notes:
+      - "Device VO2max is an estimate from HR and pace, not a treadmill test; the source tiers were set on measured exercise capacity."
+    assumptions: []
+    confidence: low
+
+  # ------------------------------------------------------------------ 6. HRV (context only)
+  - key: hrv_rmssd
+    label: Heart rate variability (rMSSD)
+    input: hrv_rmssd
+    unit: ms
+    window_days: 90
+    aggregate: median
+    min_days: 14
+    scoring: context_nearest_bin
+    output: context
+    context_key: hrv_rmssd_percentile
+    withheld_reason: "shown under `context`; no published all-cause HR per rMSSD percentile — years not computed"
+    sex_unknown_assumption: {assumption: true, text: "Sex not in profile — compared against the mean of female and male medians"}
+    reference_table: hrv_rmssd_medians
+    citation:
+      short: "Tegegne 2019, Eur J Prev Cardiol"
+      doi: "10.1177/2047487319872567"
+      url: "https://doi.org/10.1177/2047487319872567"
+    rule_text: >-
+      90-day median nightly rMSSD compared with Lifelines (n=84,772) 10-s daytime ECG rMSSD medians by
+      sex and 5-year age bin; reports the bin whose median is closest.
+    notes:
+      - "Wearable overnight rMSSD runs higher than 10-s daytime resting ECG rMSSD — this comparison is directional only."
+    assumptions: []
+    confidence: low
+
+  # ------------------------------------------------------------------ 7. stubs (v1, older-adult levers)
+  - key: gait_speed
+    label: Gait speed
+    status: STUB
+    input: walking_speed_ms
+    unit: m/s
+    citation:
+      short: "Studenski 2011, JAMA"
+      doi: "10.1001/jama.2010.1923"
+      ref: "JAMA 2011;305(1):50"
+    rule_text: >-
+      STUB. Studenski 2011: HR 0.88 per +0.1 m/s; 0.8 m/s ≈ median life expectancy; ≥1.0 m/s better than
+      average; ≥1.2 m/s exceptional. Not computed in v0.
+
+  - key: activity_fragmentation
+    label: Activity fragmentation
+    status: STUB
+    input: minute.steps
+    citation:
+      short: "Schrack 2019, JAMA Netw Open"
+      doi: "10.1001/jamanetworkopen.2019.12352"
+    rule_text: >-
+      STUB. Schrack 2019: active-to-sedentary transition probability from minute-level activity predicts
+      mortality. Needs minute data. Not computed in v0.
+
+# ---------------------------------------------------------------------------- reference tables
+
+vo2max_norms:
+  verify_before_demo: true
+  citation: >-
+    ACSM Guidelines (Cooper Institute norms) — values to verify against Nes 2013 HUNT table
+    (DOI 10.1111/sms.12032)
+  source_note: >-
+    Published points are the Cooper Institute 40th / 60th / 80th / 95th percentiles as reprinted
+    (with permission from The Cooper Institute) in Garmin's "VO2 Max. Standard Ratings" help page.
+    The tier cut points the engine needs (25 / 50 / 75 / 97.7) are DERIVED from these by linear
+    interpolation (50, 75) and linear extrapolation (25 from the 40–60 slope; 97.7 from the 80–95 slope).
+  assumption: true
+  assumption_text: "VO2max percentile cut points 25/50/75/97.7 are interpolated/extrapolated from Cooper 40/60/80/95 percentiles; table not yet verified against ACSM/HUNT"
+  percentiles: [40, 60, 80, 95]
+  male:
+    "20-29": [41.7, 45.4, 51.1, 55.4]
+    "30-39": [40.5, 44.0, 48.3, 54.0]
+    "40-49": [38.5, 42.4, 46.4, 52.5]
+    "50-59": [35.6, 39.2, 43.4, 48.9]
+    "60-69": [32.2, 35.5, 39.5, 45.7]
+    "70-79": [29.4, 32.3, 36.7, 42.1]
+  female:
+    "20-29": [36.1, 39.5, 43.9, 49.6]
+    "30-39": [34.4, 37.8, 42.4, 47.4]
+    "40-49": [33.0, 36.3, 39.7, 45.3]
+    "50-59": [30.1, 33.0, 36.7, 41.1]
+    "60-69": [27.5, 30.0, 33.0, 37.8]
+    "70-79": [25.9, 28.1, 30.9, 36.7]
+
+hrv_rmssd_medians:
+  source: "Tegegne 2019, Lifelines, 10-s daytime ECG rMSSD medians (ms)"
+  # interpolated: true rows are linear interpolations between published neighbours (assumption)
+  interpolation_assumption_text: "rMSSD median for this age bin is linearly interpolated between published neighbouring bins (Tegegne table missing 35–39, 45–49, 55–74)"
+  bins:
+    - {bin: "20–24", female: 52.1, male: 47.6}
+    - {bin: "25–29", female: 47.5, male: 42.3}
+    - {bin: "30–34", female: 42.3, male: 36.9}
+    - {bin: "35–39", female: 38.1, male: 32.95, interpolated: true}
+    - {bin: "40–44", female: 33.9, male: 29.0}
+    - {bin: "45–49", female: 30.25, male: 26.35, interpolated: true}
+    - {bin: "50–54", female: 26.6, male: 23.7}
+    - {bin: "55–59", female: 24.5, male: 21.94, interpolated: true}
+    - {bin: "60–64", female: 22.4, male: 20.18, interpolated: true}
+    - {bin: "65–69", female: 20.3, male: 18.42, interpolated: true}
+    - {bin: "70–74", female: 18.2, male: 16.66, interpolated: true}
+    - {bin: "75+",   female: 16.1, male: 14.9}
+
+# =====================================================================================
+# CALENDAR JOIN — the suggestion layer WHOOP cannot draw: body state × your week.
+# Inputs: body signals from the export's last 7 days (recovery_pct / sleep_debt_min /
+# rhr trend / sleep_regularity) and calendar load from an .ics export.
+# Verbs are about the week (move / block / cut / schedule), not about training.
+# Every threshold here is an ASSUMPTION (no literature maps recovery to meeting load);
+# the assumption text surfaces in the output. Jing owns this table.
+# =====================================================================================
+calendar:
+  hard_event_keywords:          # case-insensitive substring match on event summary
+    - negotiation
+    - negotiat
+    - review
+    - presentation
+    - present
+    - interview
+    - board
+    - exec
+    - QBR
+    - pitch
+    - demo
+    - "1:1"                         # quoted: bare 1:1 is YAML 1.1 sexagesimal and loads as the integer 61
+    - one-on-one
+    - performance
+    - SSG
+    - renewal
+  day_load:
+    meeting_hours_heavy: 5.0          # assumption
+    back_to_back_gap_min: 10          # two events ≤10 min apart count as back-to-back
+    back_to_back_heavy: 4             # ≥4 back-to-back transitions = fragmented day
+    evening_cutoff_hour: 19           # events ending after 19:00 local = evening load
+    week_heavy_multiplier: 3          # week is heavy when Σ meeting hours over the horizon ≥ meeting_hours_heavy × 3 (assumption)
+    day_light_hours: 2.0              # a day under 2 h of meetings is "light" (assumption)
+  body_state:                          # computed from the export's LAST available day(s)
+    recovery_bands:                    # WHOOP's own bands (whoop.com/thelocker/how-does-whoop-recovery-work-101)
+      - {name: red,    lo: null, hi: 34}
+      - {name: yellow, lo: 34,   hi: 67}
+      - {name: green,  lo: 67,   hi: null}
+    sleep_debt_high_min: 45            # assumption
+    rhr_rising_days: 3                 # RHR above the 28-day median for ≥3 consecutive days = rising (assumption)
+    rhr_rising_margin_bpm: 2.0
+    rhr_baseline_days: 28              # baseline = median RHR over the 28 calendar days ending on the export's last day
+    rhr_baseline_min_days: 14          # fewer RHR values than this in the baseline window → rhr_rising is None (withheld)
+  rules:                               # evaluated in order for each of the next 7 calendar days; all matching rules fire, max 2 shown
+    - key: red_hard_event
+      when: {recovery: red, day_has_hard_event: true}
+      suggest: "Move the {hard_event} if you can. If not, block 20 minutes before it and nothing right after."
+      why: "Recovery is red and the day holds a high-stakes event."
+    - key: debt_early_meeting
+      when: {sleep_debt_high: true, first_event_before_hour: 9}
+      first_event_day: next            # "tonight … tomorrow starts early": the early meeting is checked on the FOLLOWING day
+      suggest: "Tonight: cut one thing from the evening rather than planning an earlier bedtime. Your first meeting is at {first_event_time}."
+      why: "Sleep debt is high and tomorrow starts early."
+    - key: rhr_rising_heavy_week
+      when: {rhr_rising: true, week_meeting_hours_heavy: true}
+      scope: week                      # a week-level rule: shown once, on the first day of the plan
+      suggest: "Resting heart rate has climbed for {rhr_rising_days} days and this week already holds {week_meeting_hours} h of meetings. Decline new ones; clear Friday afternoon."
+      why: "A rising RHR with a loaded week is the pattern that precedes a crash."
+    - key: fragmented_day
+      when: {back_to_back_heavy: true}
+      suggest: "{back_to_back} back-to-back transitions. Merge or move one so you get a 15-minute gap before the hardest block."
+      why: "Fragmentation costs more than the hours themselves."
+    - key: evening_load_debt
+      when: {sleep_debt_high: true, evening_event: true}
+      suggest: "You have an evening event and sleep debt. Make it the last thing; no screens after."
+      why: "Evening load pushes sleep onset later on a night you cannot afford."
+    - key: green_empty_day
+      when: {recovery: green, day_meeting_hours_light: true}
+      suggest: "Recovery is green and the calendar is light. Schedule the hard thing you keep postponing."
+      why: "Good days with empty calendars are the scarce resource."
+    - key: yellow_default
+      when: {recovery: yellow}
+      suggest: "Steady day. Keep the schedule as it is; do not add."
+      why: "Yellow recovery holds a normal day but not an extra one."
+  assumptions:
+    - {assumption: true, text: "Calendar thresholds (5 h meetings = heavy, ≥4 back-to-back = fragmented, 45 min sleep debt = high) are our choices; no published study maps recovery scores to meeting load"}
+    - {assumption: true, text: "Body state is as of the export's last day and is carried forward over the next 7 calendar days; a newer export refreshes it"}
+    - {assumption: true, text: "A week is 'heavy' at ≥15 h of meetings over the 7-day plan (3 × the 5 h heavy-day threshold); a day under 2 h of meetings is 'light'"}
+    - {assumption: true, text: "RHR is 'rising' when it sits more than 2 bpm above its own 28-day median for ≥3 consecutive days"}
+
+# =====================================================================================
+# EXPERIMENTS — suggestion with a receipt. One protocol per lever; the receipt compares
+# the metric before vs after the start date with a bootstrap CI. No causal claim: a
+# before/after on one person is an N-of-1 observation, and the output says so.
+# =====================================================================================
+experiments:
+  min_days_before: 14
+  min_days_after: 14
+  bootstrap_iterations: 2000
+  min_values_before: 7                 # fewer baseline values than this → status no_baseline (no receipt computed)
+  bootstrap_block_days: 7              # moving-block bootstrap: daily wearable values are autocorrelated, so days are resampled in 7-day blocks
+  bootstrap_assumption: {assumption: true, text: "CI from a circular moving-block bootstrap (7-day blocks, seed 0): day-to-day wearable values are autocorrelated, and resampling single days would make the interval too narrow"}
+  protocols:
+    - lever: sleep_regularity
+      name: "Fixed wake time"
+      change: "Same wake time every day, weekends included, for 14 days. Bedtime can float."
+      duration_days: 14
+      metrics: [sleep_regularity_sri, hrv_rmssd, rhr]
+      expected: "SRI up; rMSSD up and RHR down follow in week 2 if it is working"
+      citation: {short: "Windred 2024 (SRI & mortality); Phillips 2017 (SRI definition)", doi: "10.1093/sleep/zsad253"}
+    - lever: steps
+      name: "Walk to the next quartile"
+      change: "Add one 25-minute walk on weekdays (≈2,500 steps) for 14 days."
+      duration_days: 14
+      metrics: [steps, rhr]
+      expected: "Steps up by ~2,000/day; RHR unchanged or slightly down"
+      citation: {short: "Paluch 2022", doi: "10.1016/S2468-2667(21)00302-9"}
+    - lever: rhr
+      name: "Alcohol-free fortnight"
+      change: "No alcohol for 14 days. Nothing else changes."
+      duration_days: 14
+      metrics: [rhr, hrv_rmssd]
+      expected: "RHR down 2–4 bpm, rMSSD up (Altini & Plews 2021 direction table)"
+      citation: {short: "Altini & Plews 2021, Sensors", doi: "10.3390/s21237932"}
+    - lever: sleep_duration
+      name: "Thirty minutes earlier"
+      change: "Lights out 30 minutes earlier than your 14-day median for 14 days."
+      duration_days: 14
+      metrics: [sleep_min, hrv_rmssd]
+      expected: "Asleep duration up ≥20 min"
+      citation: {short: "Cappuccio 2010", doi: "10.1093/sleep/33.5.585"}
+    - lever: vo2max
+      name: "Two zone-2 sessions a week"
+      change: "Two 40-minute easy-aerobic sessions per week for 6 weeks (VO2max moves slowly)."
+      duration_days: 42
+      metrics: [vo2max, rhr]
+      expected: "VO2max +1–2 ml/kg/min over 6 weeks; RHR down"
+      citation: {short: "Mandsager 2018", doi: "10.1001/jamanetworkopen.2018.3605"}
+  receipt_note: "Before/after on one person is an N-of-1 observation, not a trial. The confidence interval says whether the change is bigger than your own week-to-week noise, nothing more."

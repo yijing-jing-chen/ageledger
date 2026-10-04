@@ -1,0 +1,247 @@
+{
+  "version": "0.0.1",
+  "source": "whoop",
+  "coverage": {
+    "days": 180,
+    "first": "2026-04-03",
+    "last": "2026-09-29",
+    "minute_days": 0,
+    "columns_present": [
+      "steps",
+      "rhr",
+      "hrv_rmssd",
+      "vo2max",
+      "sleep_min",
+      "sleep_onset",
+      "sleep_offset",
+      "sleep_efficiency",
+      "sleep_deep_min",
+      "sleep_rem_min",
+      "resp_rate",
+      "spo2",
+      "skin_temp_c",
+      "strain",
+      "active_kcal"
+    ]
+  },
+  "profile": {
+    "age_years": 35,
+    "sex": "female",
+    "assumed": [],
+    "entered": [
+      "age_years",
+      "sex"
+    ]
+  },
+  "bio_age": {
+    "cosinor": null,
+    "composite": {
+      "value": 36.7,
+      "advance_years": 1.7,
+      "chronological_age": 35,
+      "n_levers": 4,
+      "confidence": "low",
+      "contributions": [
+        {
+          "key": "sleep_regularity",
+          "label": "Sleep regularity (SRI)",
+          "years_vs_population": 1.4,
+          "band": "Q2 (SRI 61–71)",
+          "population_band": "Q3 (SRI 71–76)",
+          "confidence": "medium"
+        },
+        {
+          "key": "steps",
+          "label": "Daily steps",
+          "years_vs_population": 0.9,
+          "band": "Q2 (5,801 median)",
+          "population_band": "Q3 (7,842 median)",
+          "confidence": "high"
+        },
+        {
+          "key": "rhr",
+          "label": "Resting heart rate",
+          "years_vs_population": -0.2,
+          "band": "60–69 bpm",
+          "population_band": "≈ 67 bpm median",
+          "confidence": "medium"
+        },
+        {
+          "key": "sleep_duration",
+          "label": "Sleep duration",
+          "years_vs_population": -0.4,
+          "band": "7–8 h",
+          "population_band": "6–7 h",
+          "confidence": "high"
+        }
+      ],
+      "trend": [
+        {
+          "as_of": "2026-07-31",
+          "value": 36.8
+        },
+        {
+          "as_of": "2026-08-30",
+          "value": 36.8
+        },
+        {
+          "as_of": "2026-09-29",
+          "value": 36.7
+        }
+      ],
+      "pace_years_per_year": 0.8,
+      "rule": "Each lever's hazard ratio is taken relative to the population-typical band (not the best band), converted to years with the Gompertz rule (ln HR / ln 2 × 8), and the years are summed onto your calendar age.",
+      "assumptions": [
+        "Levers summed as if independent; in reality sleep, steps and resting heart rate overlap, so the sum likely overstates both costs and credits.",
+        "Population-typical bands are the middle quantile of each source cohort, not a matched sample of your age and sex.",
+        "Mortality-rate doubling time fixed at 8 years (published range 7–10)."
+      ],
+      "citation": {
+        "short": "Gompertz composite of published all-cause hazard ratios — the framing WHOOP describes for WHOOP Age",
+        "url": "https://www.whoop.com/thelocker/healthspan/"
+      }
+    },
+    "fitness_age": {
+      "value": 44,
+      "vo2max": 33.1,
+      "sex": "female",
+      "rule": "Latest wearable VO₂max placed against sex-specific healthy-population norms; fitness age is the age at which 33.1 ml/kg/min is the median.",
+      "citation": {
+        "short": "Fitness-age framing: Nes 2013 HUNT / Garmin Fitness Age; norms: Cooper Institute (ACSM)",
+        "ref": "ACSM Guidelines (Cooper Institute norms) — values to verify against Nes 2013 HUNT table (DOI 10.1111/sms.12032)",
+        "doi": "10.1111/sms.12032"
+      },
+      "assumptions": [
+        "Wearable VO₂max is itself an estimate from heart rate and movement, not a lab test."
+      ],
+      "notes": [
+        "Verify with a lab or field test before acting on it; wrist estimates can sit 3–5 ml/kg/min off."
+      ]
+    },
+    "hrv_age_equivalent": {
+      "value": 32,
+      "bin": "30–34",
+      "rule": "90-day median nightly rMSSD matched to the female age bin whose median it is closest to.",
+      "citation": {
+        "short": "Tegegne 2020, Eur J Prev Cardiol (Lifelines)",
+        "doi": null
+      },
+      "assumptions": [
+        "Norms come from 10-s daytime ECG; wearable overnight rMSSD runs higher."
+      ],
+      "notes": [
+        "Norm match, not a clock: HRV has no published all-cause hazard ratio per year of 'HRV age'."
+      ]
+    }
+  },
+  "levers": [
+    {
+      "key": "sleep_regularity",
+      "label": "Sleep regularity (SRI)",
+      "window_days": 90,
+      "your_value": 68.4,
+      "unit": "SRI",
+      "n_days": 86,
+      "band": "Q2 (SRI 61–71)",
+      "reference_band": "Q5 (SRI ≥ 81)",
+      "hr_vs_reference": 1.2,
+      "years": 2.1,
+      "years_recoverable": 2.1,
+      "rule": "Sleep Regularity Index over the last 90 nights (same-state probability for every minute pair 24 h apart, scaled 0–100), placed in Windred 2024 UK Biobank quintiles; all-cause mortality HR relative to the most regular quintile.",
+      "citation": {
+        "short": "Windred 2024, Sleep",
+        "doi": "10.1093/sleep/zsad253"
+      },
+      "assumptions": [
+        "SRI quintile cut points assumed; pending Windred 2024 supplementary"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "key": "steps",
+      "label": "Daily steps",
+      "window_days": 90,
+      "your_value": 6840,
+      "unit": "steps/day",
+      "n_days": 88,
+      "band": "Q2 (5,801 median)",
+      "reference_band": "Q4 (10,901 median)",
+      "hr_vs_reference": 1.15,
+      "years": 1.6,
+      "years_recoverable": 1.6,
+      "rule": "90-day mean daily steps placed in Paluch 2022 meta-analysis quartiles; HR relative to Q4. For adults under 60 the benefit plateaus around 8,000–10,000 steps/day.",
+      "citation": {
+        "short": "Paluch 2022, Lancet Public Health",
+        "doi": "10.1016/S2468-2667(21)00302-9"
+      },
+      "assumptions": [],
+      "confidence": "high"
+    },
+    {
+      "key": "rhr",
+      "label": "Resting heart rate",
+      "window_days": 90,
+      "your_value": 64.2,
+      "unit": "bpm",
+      "n_days": 87,
+      "band": "60–69 bpm",
+      "reference_band": "< 60 bpm",
+      "hr_vs_reference": 1.053,
+      "years": 0.6,
+      "years_recoverable": 0.6,
+      "rule": "90-day median nightly resting heart rate; all-cause mortality HR from the dose–response curve (HR 1.09 per +10 bpm), evaluated relative to the < 60 bpm band.",
+      "citation": {
+        "short": "Zhang 2016, CMAJ",
+        "doi": "10.1503/cmaj.150535"
+      },
+      "assumptions": [],
+      "confidence": "medium"
+    },
+    {
+      "key": "sleep_duration",
+      "label": "Sleep duration",
+      "window_days": 90,
+      "your_value": 7.3,
+      "unit": "h/night",
+      "n_days": 87,
+      "band": "7–8 h",
+      "reference_band": "7–8 h",
+      "hr_vs_reference": 1.0,
+      "years": 0.0,
+      "years_recoverable": 0.0,
+      "rule": "90-day mean asleep time (not time in bed) placed against the Cappuccio 2010 meta-analysis: short sleep < 6 h HR 1.12, long sleep > 9 h HR 1.30, relative to 7–8 h.",
+      "citation": {
+        "short": "Cappuccio 2010, Sleep",
+        "doi": "10.1093/sleep/33.5.585"
+      },
+      "assumptions": [],
+      "confidence": "high"
+    }
+  ],
+  "withheld": [
+    {
+      "key": "cosinor_age",
+      "reason": "CosinorAge requires accelerometer ENMO; this export has none"
+    },
+    {
+      "key": "vo2max",
+      "reason": "only 2 VO₂max readings in the last 90 days (the lever needs ≥ 3); the latest one is shown as Fitness age above"
+    },
+    {
+      "key": "hrv_rmssd",
+      "reason": "percentile shown under `context`; no published all-cause HR per rMSSD percentile — years not computed"
+    }
+  ],
+  "context": [
+    {
+      "key": "hrv_rmssd_percentile",
+      "your_value": 58.0,
+      "note": "90-day median nightly rMSSD of 47 ms sits near the 58th percentile for women 35–39 (Tegegne 2020, 10-s daytime ECG; wearable overnight rMSSD runs higher, so read this as a rough percentile, not a verdict).",
+      "citation": {
+        "short": "Tegegne 2020, Eur J Prev Cardiol (Lifelines)",
+        "doi": null
+      }
+    }
+  ],
+  "ranking_note": "levers sorted by years_recoverable desc; ties by confidence"
+}

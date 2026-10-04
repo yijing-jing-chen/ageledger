@@ -1,0 +1,1104 @@
+<title>AgeLedger</title>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap");
+  :root {
+    --bg: #f6f3ec;
+    --fg: #1c1a16;
+    --surface: #fffdf8;
+    --surface-2: #f1ede3;
+    --ink: #1c1a16;
+    --ink-2: #47433b;
+    --muted: #7a7468;
+    --rule: #e2dccf;
+    --rule-strong: #cfc7b6;
+    --cost: #a63a2b;
+    --cost-bg: #f7e6e1;
+    --credit: #2c6a4b;
+    --credit-bg: #e2efe6;
+    --neutral: #6f6a60;
+    --amber: #8a5a0a;
+    --amber-bg: #f8edd5;
+    --amber-rule: #e6cf9c;
+    --focus: #2f5d8a;
+    --accent: #2f5d8a;
+    --accent-bg: #e3ebf3;
+    --serif: "Newsreader", "Iowan Old Style", "Charter", Georgia, serif;
+    --sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --radius: 14px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #13120f;
+      --fg: #eee9de;
+      --surface: #1b1a16;
+      --surface-2: #23211c;
+      --ink: #eee9de;
+      --ink-2: #cdc7ba;
+      --muted: #969083;
+      --rule: #2f2c25;
+      --rule-strong: #403c33;
+      --cost: #e4806f;
+      --cost-bg: #3a1f1a;
+      --credit: #7cc49b;
+      --credit-bg: #18301f;
+      --neutral: #a49e91;
+      --amber: #e7b55a;
+      --amber-bg: #2d2412;
+      --amber-rule: #5a4519;
+      --focus: #8fb6e0;
+      --accent: #8fb6e0;
+      --accent-bg: #1c2836;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #13120f;
+    --fg: #eee9de;
+    --surface: #1b1a16;
+    --surface-2: #23211c;
+    --ink: #eee9de;
+    --ink-2: #cdc7ba;
+    --muted: #969083;
+    --rule: #2f2c25;
+    --rule-strong: #403c33;
+    --cost: #e4806f;
+    --cost-bg: #3a1f1a;
+    --credit: #7cc49b;
+    --credit-bg: #18301f;
+    --neutral: #a49e91;
+    --amber: #e7b55a;
+    --amber-bg: #2d2412;
+    --amber-rule: #5a4519;
+    --focus: #8fb6e0;
+    --accent: #8fb6e0;
+    --accent-bg: #1c2836;
+    color-scheme: dark;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.55 var(--sans);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 64px; }
+  a { color: inherit; text-decoration-color: var(--rule-strong); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: currentColor; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+  .num, .serif-num { font-variant-numeric: tabular-nums lining-nums; }
+
+  /* Header */
+  header.masthead { padding: 8px 0 28px; border-bottom: 1px solid var(--rule); margin-bottom: 28px; }
+  .wordmark { font: 600 15px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 22px; }
+  .tagline { font: 400 clamp(30px, 7vw, 44px)/1.08 var(--serif); letter-spacing: -.015em; margin: 0 0 16px; max-width: 18ch; }
+  .promise { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 22px; }
+  .eyebrow { font: 600 11.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+
+  /* Upload */
+  .drop {
+    display: block; position: relative; border: 1.5px dashed var(--rule-strong); border-radius: 12px;
+    padding: 30px 18px; text-align: center; cursor: pointer; transition: border-color .15s, background-color .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--ink-2); background: var(--surface-2); }
+  .drop input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .drop-title { font: 500 21px/1.25 var(--serif); margin: 0 0 6px; }
+  .drop-sub { margin: 0; color: var(--muted); font-size: 14px; }
+  .btn {
+    display: inline-block; margin-top: 14px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--ink);
+    background: var(--ink); color: var(--bg); font: 500 14px/1 var(--sans);
+  }
+  .sources { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; }
+  .sources-label { font-size: 13px; color: var(--muted); margin-right: 2px; }
+  .chip {
+    font: 500 13px/1 var(--sans); color: var(--ink-2); background: transparent; border: 1px solid var(--rule-strong);
+    border-radius: 999px; padding: 7px 11px; cursor: help;
+  }
+  .chip[aria-pressed="true"] { border-color: var(--ink-2); color: var(--ink); background: var(--surface-2); }
+  .hint { min-height: 1.5em; margin: 10px 0 0; font-size: 13.5px; color: var(--muted); }
+  .hint b { color: var(--ink-2); font-weight: 600; }
+  .upload-foot { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 14px; }
+  .linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; text-decoration-color: var(--rule-strong); text-underline-offset: 3px; cursor: pointer; }
+  .linkbtn:hover { text-decoration-color: currentColor; }
+  .formats { color: var(--muted); font-size: 13px; }
+
+  /* Profile row (age / sex) */
+  .profile-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 20px; margin-top: 16px; scroll-margin-top: 24px; }
+  .field-label { display: block; font: 600 11.5px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 7px; }
+  .age-input {
+    width: 92px; padding: 8px 10px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--surface);
+    color: var(--ink); font: 500 15px/1.2 var(--sans); font-variant-numeric: tabular-nums;
+  }
+  .age-input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .age-input.flash { border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 25%, transparent); }
+  .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 999px; padding: 2px; background: var(--surface); }
+  .seg input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+  .seg label { font: 500 13.5px/1 var(--sans); color: var(--ink-2); padding: 8px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+  .seg input:checked + label { background: var(--ink); color: var(--bg); }
+  .seg input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 1px; }
+  fieldset.seg-wrap { border: 0; margin: 0; padding: 0; min-width: 0; }
+  fieldset.seg-wrap legend { padding: 0; }
+  .helper { margin: 9px 0 0; font-size: 13px; color: var(--muted); max-width: 60ch; }
+
+  /* Status */
+  .status { margin-top: 16px; font-size: 14px; color: var(--ink-2); }
+  .status[hidden] { display: none; }
+  .bar { position: relative; height: 2px; background: var(--rule); overflow: hidden; margin-top: 10px; border-radius: 2px; }
+  .bar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 30%; background: var(--ink-2); animation: slide 1.2s ease-in-out infinite; }
+  @keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(340%); } }
+  @media (prefers-reduced-motion: reduce) { .bar::after { animation: none; width: 100%; opacity: .4; } }
+  .error { margin-top: 16px; padding: 12px 14px; border-radius: 10px; background: var(--cost-bg); color: var(--cost); font-size: 14px; }
+  .notice { margin: 0 0 18px; padding: 12px 14px; border-radius: 10px; background: var(--amber-bg); border: 1px solid var(--amber-rule); color: var(--amber); font-size: 14px; }
+
+  /* Results */
+  #results { margin-top: 40px; }
+  #results[hidden] { display: none; }
+  section.block { margin-top: 36px; }
+  .h2 { font: 500 26px/1.15 var(--serif); letter-spacing: -.01em; margin: 0 0 4px; }
+  .h2-sub { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+
+  .coverage { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--rule); border-radius: 12px; background: var(--surface); }
+  .coverage > div { padding: 12px 14px; border-left: 1px solid var(--rule); min-width: 0; }
+  .coverage > div:first-child { border-left: 0; }
+  .coverage dt { font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+  .coverage dd { margin: 0; font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+  .profile-line { margin: 10px 2px 0; font-size: 13px; color: var(--muted); }
+
+  .bio { display: grid; grid-template-columns: auto 1fr; gap: 6px 26px; align-items: end; }
+  .bio-big { font: 400 64px/0.95 var(--serif); letter-spacing: -.02em; }
+  .bio-big small { font-size: 18px; color: var(--muted); letter-spacing: 0; margin-left: 4px; }
+  .bio-meta { font-size: 14px; color: var(--ink-2); padding-bottom: 6px; }
+  .bio-meta .adv { font: 500 22px/1.2 var(--serif); display: block; }
+  .bio-cite { grid-column: 1 / -1; margin-top: 12px; font-size: 13px; color: var(--muted); }
+  .bio-empty-title { font: 500 20px/1.3 var(--serif); margin: 0 0 6px; }
+  .bio-empty-reason { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  /* Hero: effective age */
+  .hero-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .hero-top .eyebrow { margin: 0; }
+  .hero-num { margin-top: 14px; }
+  .hero-big { font: 400 76px/0.92 var(--serif); letter-spacing: -.025em; }
+  .hero-big small { font-size: 20px; color: var(--muted); letter-spacing: 0; margin-left: 6px; }
+  .hero-adv { margin: 10px 0 0; font-size: 15px; color: var(--ink-2); }
+  .hero-adv .adv { font: 500 22px/1.2 var(--serif); margin-right: 4px; }
+  .pace { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 8px 0 0; font-size: 14px; color: var(--ink-2); }
+  .pace .v { font-weight: 600; }
+  .pace .v.cost { color: var(--cost); }
+  .pace .v.credit { color: var(--credit); }
+  .spark { display: inline-block; vertical-align: middle; color: var(--ink-2); }
+  .contrib { list-style: none; margin: 20px 0 0; padding: 0; border-top: 1px solid var(--rule); }
+  .contrib li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--rule); }
+  .contrib .c-label { font-size: 14.5px; min-width: 0; }
+  .contrib .c-band { grid-column: 1; font-size: 12.5px; color: var(--muted); }
+  .contrib .c-yrs { grid-row: 1 / span 2; grid-column: 2; font: 400 22px/1 var(--serif); text-align: right; white-space: nowrap; }
+  .contrib .c-yrs.cost { color: var(--cost); }
+  .contrib .c-yrs.credit { color: var(--credit); }
+  .contrib .c-yrs.neutral { color: var(--neutral); }
+  .sum-note { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+  details.how { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--ink-2); }
+  details.how > summary { cursor: pointer; font-size: 13.5px; color: var(--ink); list-style: none; }
+  details.how > summary::-webkit-details-marker { display: none; }
+  details.how > summary::before { content: "+ "; color: var(--muted); }
+  details.how[open] > summary::before { content: "\2212  "; }
+  details.how p { margin: 10px 0 0; }
+  details.how .k { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .anchor-link { color: var(--ink); }
+
+  /* Secondary estimates */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+  .tile .eyebrow { margin-bottom: 8px; }
+  .tile-val { font: 400 34px/1 var(--serif); letter-spacing: -.02em; }
+  .tile-val small { font-size: 14px; color: var(--muted); margin-left: 3px; letter-spacing: 0; }
+  .tile-sub { margin: 6px 0 0; font-size: 13.5px; color: var(--ink-2); }
+  .tile-sub .adv { font-weight: 600; }
+  .tile-note { margin: 6px 0 0; font-size: 12.5px; color: var(--muted); }
+  .tile-cite { margin: 8px 0 0; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+  .tile-empty { margin: 0; font-size: 13.5px; color: var(--muted); }
+
+  /* Ledger */
+  .ledger { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
+  .ledger > li { border-bottom: 1px solid var(--rule); }
+  .lever > summary { list-style: none; cursor: pointer; padding: 18px 2px 16px; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 4px 14px; align-items: start; }
+  .lever > summary::-webkit-details-marker { display: none; }
+  .rank { font: 400 18px/1.4 var(--serif); color: var(--muted); }
+  .lv-head { min-width: 0; }
+  .start { display: inline-block; font: 600 10.5px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--bg); background: var(--ink); padding: 4px 7px; border-radius: 4px; margin-bottom: 7px; }
+  .lv-label { font: 500 19px/1.3 var(--serif); margin: 0; }
+  .lv-value { margin: 3px 0 0; font-size: 14.5px; color: var(--ink-2); }
+  .lv-value .n { color: var(--muted); font-size: 12.5px; margin-left: 4px; }
+  .lv-bands { grid-column: 2 / -1; margin: 8px 0 0; font-size: 13.5px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+  .lv-bands .arrow { color: var(--muted); }
+  .lv-bands .hr { color: var(--muted); }
+  .pill { font: 600 10.5px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; padding: 4px 7px; border-radius: 999px; border: 1px solid var(--rule-strong); color: var(--ink-2); }
+  .pill.high { border-color: var(--credit); color: var(--credit); }
+  .pill.medium { border-color: var(--amber-rule); color: var(--amber); }
+  .pill.low { border-color: var(--cost); color: var(--cost); }
+  .yrs { text-align: right; white-space: nowrap; }
+  .yrs .big { font: 400 38px/1 var(--serif); letter-spacing: -.02em; display: block; }
+  .yrs .unit { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+  .cost .big { color: var(--cost); }
+  .credit .big { color: var(--credit); }
+  .neutral .big { color: var(--neutral); }
+  .why-toggle { grid-column: 2 / -1; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .why-toggle::before { content: "+ "; }
+  .lever[open] .why-toggle::before { content: "\2212  "; }
+  .lv-lede { grid-column: 2 / -1; margin: 10px 0 0; font: 400 16.5px/1.45 var(--serif); color: var(--ink); }
+  .why { padding: 0 2px 20px 42px; font-size: 14.5px; color: var(--ink-2); }
+  .why p { margin: 0 0 10px; }
+  .why .k { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .assume { margin: 12px 0 0; padding: 10px 12px 10px 14px; border-left: 3px solid var(--amber); background: var(--amber-bg); border-radius: 0 8px 8px 0; color: var(--amber); }
+  .assume .k { color: inherit; }
+  .adv.cost { color: var(--cost); }
+  .adv.credit { color: var(--credit); }
+  .assume ul { margin: 4px 0 0; padding-left: 18px; }
+  .assume li { margin: 2px 0; }
+
+  /* Withheld / context */
+  .plain-list { list-style: none; margin: 0; padding: 0; }
+  .plain-list li { padding: 11px 0; border-bottom: 1px solid var(--rule); font-size: 14.5px; }
+  .plain-list li:first-child { border-top: 1px solid var(--rule); }
+  .muted { color: var(--muted); }
+  .withheld li { color: var(--muted); }
+  .withheld b { color: var(--ink-2); font-weight: 500; }
+  .ctx-val { font: 400 28px/1 var(--serif); margin-right: 10px; }
+  .ctx-label { font-weight: 500; }
+  .ctx-note { margin: 6px 0 0; color: var(--ink-2); }
+  .ctx-cite { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+  .ranking-note { margin: 10px 2px 0; font-size: 12.5px; color: var(--muted); }
+
+  footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+  footer p { margin: 0 0 6px; }
+  code { font: 12.5px/1 ui-monospace, "SF Mono", Menlo, monospace; background: var(--surface-2); padding: 2px 5px; border-radius: 4px; }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 28px 16px 48px; }
+    .card { padding: 18px 16px; }
+    .coverage { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .coverage > div:nth-child(3) { border-left: 0; }
+    .coverage > div:nth-child(n+3) { border-top: 1px solid var(--rule); }
+    .bio { grid-template-columns: 1fr; }
+    .bio-big { font-size: 54px; }
+    .hero-big { font-size: 62px; }
+    .tiles { grid-template-columns: 1fr; }
+    .lever > summary { grid-template-columns: 22px minmax(0, 1fr) auto; gap: 4px 10px; }
+    .yrs .big { font-size: 30px; }
+    .lv-bands, .why-toggle, .lv-lede { grid-column: 1 / -1; }
+    .why { padding-left: 2px; }
+  }
+  body { background: var(--bg); color: var(--fg); }
+  html, body { overflow-x: hidden; }
+
+  /* Two drop zones */
+  .drop-label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 22px 0 10px; }
+  .drop-label .eyebrow { margin: 0; }
+  .drop.drop-sm { padding: 18px 16px; }
+  .drop.drop-sm .drop-title { font-size: 18px; }
+  .loaded { margin: 8px 0 0; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .loaded b { color: var(--ink-2); font-weight: 600; }
+  .cal-help { margin: 10px 0 0; font-size: 13px; color: var(--muted); max-width: 68ch; }
+  .cal-help b { color: var(--ink-2); font-weight: 600; }
+  .sample-tag { display: inline-block; font: 600 10.5px/1 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--amber); background: var(--amber-bg); border: 1px solid var(--amber-rule); padding: 4px 7px; border-radius: 999px; }
+
+  /* Your week */
+  .week-wide { position: relative; }
+  .body-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 14px; font-size: 13.5px; color: var(--ink-2); }
+  .week-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .day { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px; padding: 12px 14px 14px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+  .day.is-today { border-color: var(--rule-strong); box-shadow: inset 0 3px 0 var(--ink); }
+  .day-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+  .day-wd { font: 500 18px/1.1 var(--serif); }
+  .day-date { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+  .day-load { font-size: 13px; color: var(--ink-2); margin: 0; min-width: 0; }
+  .day-load .sep { color: var(--rule-strong); margin: 0 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
+  .hard { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 12px/1.2 var(--sans); color: var(--accent); background: var(--accent-bg); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 6px; padding: 3px 7px; }
+  .strip { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding-top: 8px; border-top: 1px dashed var(--rule); min-width: 0; }
+  .bpill { font: 600 11px/1 var(--sans); padding: 4px 7px; border-radius: 999px; border: 1px solid var(--rule-strong); color: var(--ink-2); white-space: nowrap; }
+  .bpill.green { color: var(--credit); border-color: var(--credit); background: var(--credit-bg); }
+  .bpill.yellow { color: var(--amber); border-color: var(--amber-rule); background: var(--amber-bg); }
+  .bpill.red { color: var(--cost); border-color: var(--cost); background: var(--cost-bg); }
+  .bpill.flag { color: var(--cost); border-color: var(--cost); }
+  .asof { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .sugg { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .sugg li { min-width: 0; }
+  .sugg .t { margin: 0; font: 400 15px/1.38 var(--serif); color: var(--ink); }
+  .sugg .w { margin: 3px 0 0; font-size: 12px; color: var(--muted); }
+  .quiet { margin: 0; font-size: 13px; color: var(--muted); }
+  .notes-small { margin: 12px 2px 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--muted); }
+  .notes-small li { margin: 3px 0; }
+  .empty-card { background: var(--surface); border: 1px dashed var(--rule-strong); border-radius: 12px; padding: 16px; font-size: 14px; color: var(--ink-2); }
+  @media (min-width: 620px) { .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1120px) {
+    .week-wide { width: min(1180px, calc(100vw - 72px)); left: 50%; transform: translateX(-50%); }
+    .week-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    .sugg .t { font-size: 14px; }
+  }
+
+  /* Suggestion with a receipt */
+  .proposal { margin-top: 4px; }
+  .prop-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .prop-top .eyebrow { margin: 0; }
+  .prop-name { font: 500 26px/1.15 var(--serif); margin: 10px 0 6px; }
+  .prop-change { margin: 0; font: 400 17px/1.45 var(--serif); color: var(--ink); max-width: 60ch; }
+  .prop-meta { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 20px; margin: 16px 0 0; padding: 14px 0 0; border-top: 1px solid var(--rule); }
+  .prop-meta div { min-width: 0; }
+  .prop-meta dt { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 3px; }
+  .prop-meta dd { margin: 0; font-size: 14px; color: var(--ink-2); overflow-wrap: anywhere; }
+  .controls { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 18px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rule); }
+  .controls > div { min-width: 0; }
+  .select, .date-input {
+    padding: 8px 10px; border: 1px solid var(--rule-strong); border-radius: 10px; background: var(--surface);
+    color: var(--ink); font: 500 14.5px/1.2 var(--sans); max-width: 100%;
+  }
+  .select { min-width: 0; width: 100%; max-width: 340px; }
+  .receipt { margin-top: 18px; }
+  .rc-head { margin: 0 0 10px; font-size: 14px; color: var(--ink-2); }
+  .rc-status { font: 500 20px/1.3 var(--serif); margin: 0 0 4px; }
+  .rc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .rc-table th { text-align: left; font: 600 11px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 8px 8px 8px 0; border-bottom: 1px solid var(--ink); }
+  .rc-table td { padding: 10px 8px 10px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  .rc-table td.n, .rc-table th.n { text-align: right; white-space: nowrap; }
+  .rc-delta { font: 400 20px/1.1 var(--serif); }
+  .rc-delta.good { color: var(--credit); }
+  .rc-delta.bad { color: var(--cost); }
+  .rc-ci { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .verdict { font-size: 13px; color: var(--ink-2); }
+  .verdict.beyond { color: var(--ink); font-weight: 600; }
+  .rc-unit { display: block; font-size: 12px; color: var(--muted); }
+  @media (max-width: 560px) {
+    .prop-meta { grid-template-columns: minmax(0, 1fr); }
+    .rc-table thead { display: none; }
+    .rc-table, .rc-table tbody, .rc-table tr, .rc-table td { display: block; width: 100%; }
+    .rc-table tr { padding: 10px 0; border-bottom: 1px solid var(--rule); }
+    .rc-table td { border: 0; padding: 2px 0; text-align: left; }
+    .rc-table td.n { text-align: left; white-space: normal; }
+    .rc-table td[data-k]::before { content: attr(data-k) " "; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+    .rc-delta { font-size: 18px; }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <p class="wordmark">AgeLedger</p>
+    <h1 class="tagline">Your wearable already knows how fast you're aging. Here's the math.</h1>
+    <p class="promise">Nothing leaves your browser. Your export is read in this tab and never uploaded. No account. Every number cites its paper.</p>
+  </header>
+
+  <main>
+    <section class="card" aria-labelledby="upload-title">
+      <p class="eyebrow" id="upload-title">Your export</p>
+      <label class="drop" id="drop" for="file">
+        <input type="file" id="file" name="file" accept=".zip,.csv,.xml">
+        <p class="drop-title">Drop your wearable export here</p>
+        <p class="drop-sub">WHOOP zip, Apple Health export.zip, or Oura CSV. Read in this tab only.</p>
+        <span class="btn">Choose a file</span>
+      </label>
+      <p class="loaded" id="export-loaded" aria-live="polite"></p>
+
+      <div class="profile-row" id="profile-row">
+        <div>
+          <label class="field-label" for="age">Age</label>
+          <input class="age-input" type="number" id="age" name="age" min="10" max="110" step="any" inputmode="decimal" placeholder="e.g. 35" autocomplete="off">
+        </div>
+        <fieldset class="seg-wrap">
+          <legend class="field-label">Sex</legend>
+          <div class="seg">
+            <input type="radio" name="sex" id="sex-f" value="female"><label for="sex-f">Female</label>
+            <input type="radio" name="sex" id="sex-m" value="male"><label for="sex-m">Male</label>
+            <input type="radio" name="sex" id="sex-n" value="" checked><label for="sex-n">Prefer not</label>
+          </div>
+        </fieldset>
+      </div>
+      <p class="helper" id="profile-help">WHOOP and Oura exports carry no age or sex. Needed for the effective-age estimate and VO₂max tier. Kept in this browser only.</p>
+
+      <div class="sources" role="group" aria-label="How to export">
+        <span class="sources-label">How to export:</span>
+        <button type="button" class="chip" data-src="WHOOP">WHOOP</button>
+        <button type="button" class="chip" data-src="Apple Health">Apple Health</button>
+        <button type="button" class="chip" data-src="Oura">Oura</button>
+      </div>
+      <p class="hint" id="hint" aria-live="polite">Tap a source for its export steps.</p>
+
+      <div class="drop-label"><p class="eyebrow" id="cal-title">Your calendar (.ics)</p><button type="button" class="linkbtn" id="sample-cal">Use sample calendar</button></div>
+      <label class="drop drop-sm" id="cal-drop" for="cal-file" aria-labelledby="cal-title">
+        <input type="file" id="cal-file" name="cal-file" accept=".ics,.zip,text/calendar">
+        <p class="drop-title">Drop a calendar export</p>
+        <p class="drop-sub">An .ics file, or the zip Google Calendar gives you.</p>
+      </label>
+      <p class="cal-help"><b>Google Calendar:</b> Settings → Import &amp; export → Export (a zip of .ics files; drop the zip). <b>Apple Calendar:</b> File → Export → Export.</p>
+      <p class="loaded" id="cal-loaded" aria-live="polite"></p>
+
+      <div class="upload-foot">
+        <button type="button" class="linkbtn" id="sample">Use the sample export</button>
+        <span class="formats">.zip · .csv · .xml · .ics — processed locally</span>
+      </div>
+
+      <div class="status" id="status" hidden>
+        <span id="status-text">Reading your export…</span>
+        <div class="bar" aria-hidden="true"></div>
+      </div>
+      <div class="error" id="error" role="alert" hidden></div>
+    </section>
+
+    <div id="results" hidden aria-live="polite"></div>
+  </main>
+
+  <footer>
+    <p id="footer-formula">Years = ln(HR)/ln(2) × 8 (mortality-rate doubling time, assumption). Not medical advice.</p>
+    <p>Method: every threshold lives in the open <code>rules.yaml</code> published with this page. The analysis runs in your browser.</p>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+<script src="./engine.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const SAMPLE_EXPORT = "./sample/whoop_synthetic_180d.csv";   // served as csv: artifacts do not host zip files
+  const SAMPLE_ICS = "./sample/calendar_synthetic.ics";
+  const SAMPLE_PROFILE = { age: "35", sex: "female" };
+
+  const EXPORT_HOWTO = {
+    "WHOOP": "WHOOP app → profile → Settings → Data Export. The zip arrives by email; drop it here as is.",
+    "Apple Health": "Health app → your profile picture → Export All Health Data. Drop export.zip here; large exports take a minute.",
+    "Oura": "Oura account page on the web → export your data as CSV."
+  };
+  const SOURCE_NAMES = { whoop: "WHOOP", apple: "Apple Health", oura: "Oura", edge: "edge", synthetic: "Synthetic" };
+  const KEY_LABELS = {
+    steps: "Daily steps", rhr: "Resting heart rate", sleep_duration: "Sleep duration",
+    sleep_regularity: "Sleep regularity (SRI)", vo2max: "VO₂max", hrv: "Heart rate variability",
+    hrv_rmssd: "HRV (rMSSD)", hrv_sdnn: "HRV (SDNN)", hrv_rmssd_percentile: "HRV (rMSSD)",
+    cosinor_age: "CosinorAge (biological age)", cosinor: "CosinorAge (biological age)",
+    gait_speed: "Gait speed", activity_fragmentation: "Activity fragmentation"
+  };
+  const METRICS = {
+    sleep_regularity_sri: { label: "Sleep regularity", unit: "SRI", better: 1, d: 1 },
+    hrv_rmssd: { label: "HRV (rMSSD)", unit: "ms", better: 1, d: 1 },
+    rhr: { label: "Resting heart rate", unit: "bpm", better: -1, d: 1 },
+    steps: { label: "Daily steps", unit: "steps/day", better: 1, d: 0 },
+    sleep_min: { label: "Asleep time", unit: "min/night", better: 1, d: 0 },
+    vo2max: { label: "VO₂max", unit: "ml/kg/min", better: 1, d: 1 }
+  };
+  const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    drop: $("drop"), file: $("file"), hint: $("hint"), sample: $("sample"), exportLoaded: $("export-loaded"),
+    calDrop: $("cal-drop"), calFile: $("cal-file"), sampleCal: $("sample-cal"), calLoaded: $("cal-loaded"),
+    status: $("status"), statusText: $("status-text"), error: $("error"), results: $("results"),
+    age: $("age"), profileRow: $("profile-row")
+  };
+  const sexRadios = Array.from(document.querySelectorAll('input[name="sex"]'));
+  const AL = window.AgeLedger;
+
+  const state = { rules: null, ds: null, baseProfile: null, sample: false, exportName: "", ics: null, icsName: "", icsSample: false, L: null, exp: null };
+
+  // ---------- helpers ----------
+  function esc(v) {
+    return String(v == null ? "" : v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function escInline(v) { return esc(v).replace(/`([^`]+)`/g, "<code>$1</code>"); }
+  const isNum = (v) => typeof v === "number" && isFinite(v);
+  function labelFor(key) {
+    if (!key) return "";
+    if (KEY_LABELS[key]) return KEY_LABELS[key];
+    const s = String(key).replace(/[_\.]+/g, " ").trim();
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+  function fmtValue(v) {
+    if (!isNum(v)) return v == null ? "—" : esc(v);
+    if (Math.abs(v) >= 1000) return Math.round(v).toLocaleString("en-US");
+    if (Number.isInteger(v)) return String(v);
+    return v.toFixed(1);
+  }
+  function fmtSigned(y, digits) {
+    if (!isNum(y)) return { text: "—", cls: "neutral" };
+    const d = digits == null ? 1 : digits;
+    const r = Math.round(y * Math.pow(10, d)) / Math.pow(10, d);
+    if (r === 0) return { text: (0).toFixed(d), cls: "neutral" };
+    const body = Math.abs(r) >= 1000 ? Math.abs(r).toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }) : Math.abs(r).toFixed(d);
+    return r > 0 ? { text: "+" + body, cls: "cost" } : { text: "−" + body, cls: "credit" };
+  }
+  function fmtYears(y) { return fmtSigned(y, 1); }
+  function fmtHR(hr) { return isNum(hr) ? "×" + hr.toFixed(2) : "—"; }
+  function ordinal(n) {
+    const i = Math.round(n), j = i % 10, k = i % 100;
+    if (j === 1 && k !== 11) return i + "st";
+    if (j === 2 && k !== 12) return i + "nd";
+    if (j === 3 && k !== 13) return i + "rd";
+    return i + "th";
+  }
+  function citeHTML(c) {
+    if (!c) return "";
+    const short = esc(c.short || c.title || "");
+    let href = "";
+    if (c.doi) href = "https://doi.org/" + encodeURI(String(c.doi).replace(/^https?:\/\/(dx\.)?doi\.org\//, ""));
+    else if (c.url) href = String(c.url);
+    if (href && /^https?:\/\//.test(href)) {
+      const tail = c.doi ? ' <span class="muted">doi:' + esc(c.doi) + "</span>" : "";
+      return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + short + "</a>" + tail;
+    }
+    return short;
+  }
+  function plural(n, one, many) { return n === 1 ? one : many; }
+  function shortDate(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ""));
+    return m ? MONTHS[+m[2] - 1] + " " + (+m[3]) : String(iso || "");
+  }
+  function addDays(iso, n) { const t = Date.parse(iso + "T00:00:00Z"); return new Date(t + n * 864e5).toISOString().slice(0, 10); }
+  function localToday() { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function errText(e) { return (e && e.message) ? e.message : String(e); }
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function browserTz() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (_) { return null; } }
+  function store(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (_) { /* storage blocked */ } }
+  function recall(key) { try { return JSON.parse(localStorage.getItem(key) || "null"); } catch (_) { return null; } }
+
+  // ---------- status ----------
+  function setBusy(msg) { els.error.hidden = true; els.statusText.textContent = msg; els.status.hidden = false; }
+  function setIdle() { els.status.hidden = true; }
+  function showError(msg) { setIdle(); els.error.textContent = msg; els.error.hidden = false; }
+
+  // ---------- source chips ----------
+  const chips = Array.from(document.querySelectorAll(".chip"));
+  function showHowto(chip, pin) {
+    const name = chip.dataset.src;
+    els.hint.innerHTML = "<b>" + esc(name) + ":</b> " + esc(EXPORT_HOWTO[name] || "");
+    if (pin) chips.forEach((c) => c.setAttribute("aria-pressed", c === chip ? "true" : "false"));
+  }
+  chips.forEach((chip) => {
+    chip.setAttribute("aria-pressed", "false");
+    chip.addEventListener("mouseenter", () => showHowto(chip, false));
+    chip.addEventListener("focus", () => showHowto(chip, false));
+    chip.addEventListener("click", () => showHowto(chip, true));
+  });
+
+  // ---------- age / sex (kept in this browser only) ----------
+  const PROFILE_KEY = "ageledger.profile";
+  const EXP_KEY = "ageledger.experiment";
+  function currentSex() { const r = sexRadios.find((x) => x.checked); return r ? r.value : ""; }
+  (function restoreProfile() {
+    const p = recall(PROFILE_KEY);
+    if (!p || typeof p !== "object") return;
+    if (p.age != null && p.age !== "") els.age.value = String(p.age);
+    const r = sexRadios.find((x) => x.value === (p.sex || ""));
+    if (r) r.checked = true;
+  })();
+  function readProfile() {
+    const raw = String(els.age.value || "").trim();
+    if (raw) {
+      const n = Number(raw);
+      if (!isFinite(n) || n < 10 || n > 110) return "Age must be between 10 and 110, or left blank.";
+      return { age: String(n), sex: currentSex() };
+    }
+    return { age: "", sex: currentSex() };
+  }
+  function focusAge() {
+    els.profileRow.scrollIntoView({ behavior: "smooth", block: "center" });
+    els.age.focus({ preventScroll: true });
+    els.age.classList.add("flash");
+    setTimeout(() => els.age.classList.remove("flash"), 1600);
+  }
+  let rerunTimer = null;
+  function onProfileChange() {
+    store(PROFILE_KEY, { age: els.age.value, sex: currentSex() });
+    if (state.sample || !state.ds) return;
+    clearTimeout(rerunTimer);
+    rerunTimer = setTimeout(() => run({ scroll: false }), 450);
+  }
+  els.age.addEventListener("input", onProfileChange);
+  sexRadios.forEach((r) => r.addEventListener("change", onProfileChange));
+
+  // ---------- loading ----------
+  async function getRules() {
+    if (!state.rules) state.rules = await AL.loadRules("./rules.yaml");
+    return state.rules;
+  }
+  async function fetchBlob(url, name) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("could not load " + url + " (" + res.status + ")");
+    const blob = await res.blob();
+    try { return new File([blob], name); } catch (_) { blob.name = name; return blob; }
+  }
+
+  async function loadExport(file, opts) {
+    opts = opts || {};
+    if (!file) return;
+    const mb = (file.size || 0) / (1024 * 1024);
+    setBusy("Reading " + (opts.sample ? "the sample export" : file.name) + (mb >= 1 ? " (" + mb.toFixed(0) + " MB)" : "") + "…");
+    try {
+      await getRules();
+      const ds = await AL.ingest(file, { onProgress: (m) => setBusy(m) });
+      if (!ds.rows.length) throw new Error("This export has no daily rows we can read.");
+      state.ds = ds;
+      state.baseProfile = clone(ds.profile);
+      state.sample = !!opts.sample;
+      state.exportName = opts.sample ? "Sample: synthetic person (WHOOP-style, 180 days)" : (file.name || "your export");
+      state.exp = null;
+      await run({ scroll: !!opts.scroll });
+    } catch (e) {
+      showError((opts.sample ? "Couldn't load the sample: " : "Couldn't read that export: ") + errText(e));
+    } finally {
+      els.file.value = "";
+    }
+  }
+  async function loadSample(opts) {
+    try {
+      const f = await fetchBlob(SAMPLE_EXPORT, "whoop_synthetic_180d.csv");
+      await loadExport(f, Object.assign({ sample: true }, opts || {}));
+    } catch (e) { showError("Couldn't load the sample: " + errText(e)); }
+  }
+  async function loadCalendar(file, opts) {
+    opts = opts || {};
+    try {
+      let text;
+      if (opts.sample) {
+        const res = await fetch(SAMPLE_ICS);
+        if (!res.ok) throw new Error("could not load the sample calendar (" + res.status + ")");
+        text = await res.text();
+      } else {
+        if (!file) return;
+        text = await AL.readCalendar(file);
+      }
+      state.ics = text;
+      state.icsSample = !!opts.sample;
+      state.icsName = opts.sample ? "Sample calendar: synthetic work weeks from Oct 4, 2026" : (file.name || "your calendar");
+      renderLoaded();
+      if (state.L && state.ds) {
+        state.L.week_plan = AL.weekPlan(state.ds, text, state.rules, { levers: state.L.levers, fallbackTz: browserTz() });
+        const slot = $("week-slot");
+        if (slot) { slot.innerHTML = renderWeek(state.L); if (opts.scroll) slot.scrollIntoView({ behavior: "smooth", block: "start" }); }
+      }
+      els.error.hidden = true;
+    } catch (e) {
+      showError("Couldn't read that calendar: " + errText(e));
+    } finally {
+      els.calFile.value = "";
+    }
+  }
+
+  async function run(opts) {
+    opts = opts || {};
+    const ds = state.ds;
+    if (!ds) return;
+    ds.profile = clone(state.baseProfile);
+    const prof = state.sample ? SAMPLE_PROFILE : readProfile();
+    if (typeof prof === "string") { showError(prof); focusAge(); return; }
+    setBusy("Scoring levers…");
+    try {
+      const L = await AL.analyze({ ds: ds, rules: state.rules, age: prof.age, sex: prof.sex, icsText: state.ics, fallbackTz: browserTz() });
+      state.L = L;
+      setIdle();
+      render(L, opts);
+    } catch (e) {
+      showError("Analysis failed: " + errText(e));
+    }
+  }
+
+  // ---------- inputs ----------
+  function wireDrop(zone, input, handler) {
+    input.addEventListener("change", () => handler(input.files[0]));
+    ["dragenter", "dragover"].forEach((t) => zone.addEventListener(t, (e) => { e.preventDefault(); zone.classList.add("over"); }));
+    ["dragleave", "dragend", "drop"].forEach((t) => zone.addEventListener(t, (e) => { e.preventDefault(); zone.classList.remove("over"); }));
+    zone.addEventListener("drop", (e) => { const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) handler(f); });
+  }
+  wireDrop(els.drop, els.file, (f) => {
+    if (!f) return;
+    const p = readProfile();
+    if (typeof p === "string") { showError(p); focusAge(); return; }
+    loadExport(f, { scroll: true });
+  });
+  wireDrop(els.calDrop, els.calFile, (f) => loadCalendar(f, { scroll: true }));
+  els.sample.addEventListener("click", () => loadSample({ scroll: true }));
+  els.sampleCal.addEventListener("click", () => loadCalendar(null, { sample: true, scroll: true }));
+
+  function renderLoaded() {
+    els.exportLoaded.innerHTML = state.ds ? "Showing: <b>" + esc(state.exportName) + "</b>" + (state.sample ? ' <span class="sample-tag">not you</span>' : "") : "";
+    els.calLoaded.innerHTML = state.ics ? "Calendar: <b>" + esc(state.icsName) + "</b>" + (state.icsSample ? ' <span class="sample-tag">sample</span>' : "") : "No calendar yet.";
+  }
+
+  // ---------- render: coverage, hero, tiles, ledger, withheld, context ----------
+  function renderFooter(L) {
+    const m = L.constants && L.constants.gompertz_mrdt_years;
+    const el = $("footer-formula");
+    if (el && m) el.textContent = "Years = ln(HR)/ln(2) × " + m + " (mortality-rate doubling time, assumption). Not medical advice.";
+  }
+  function renderCoverage(L) {
+    const c = L.coverage || {};
+    const src = SOURCE_NAMES[L.source] || L.source || "—";
+    const range = c.first && c.last ? esc(c.first) + " → " + esc(c.last) : "—";
+    const cells = [
+      ["Source", esc(src) + (state.sample ? " (synthetic)" : "")],
+      ["Days", isNum(c.days) ? fmtValue(c.days) : "—"],
+      ["Range", range],
+      ["Minute data", isNum(c.minute_days) ? fmtValue(c.minute_days) + " " + plural(c.minute_days, "day", "days") : "—"]
+    ];
+    const p = L.profile || {};
+    const assumed = Array.isArray(p.assumed) ? p.assumed : [];
+    const entered = Array.isArray(p.entered) ? p.entered : [];
+    const tag = (k) => state.sample ? " (synthetic)" : entered.includes(k) ? " (you entered)" : assumed.includes(k) ? " (assumed, not in export)" : " (from export)";
+    const bits = [];
+    if (isNum(p.age_years)) bits.push("Age " + fmtValue(p.age_years) + tag("age_years"));
+    if (p.sex) bits.push(esc(p.sex) + tag("sex"));
+    const profile = bits.length ? '<p class="profile-line">Profile: ' + bits.join(" · ") + "</p>" : "";
+    return '<section class="block" aria-label="Coverage"><p class="eyebrow">Coverage</p><dl class="coverage">' +
+      cells.map(([k, v]) => "<div><dt>" + k + "</dt><dd>" + v + "</dd></div>").join("") + "</dl>" + profile + "</section>";
+  }
+  function withheldFor(L, re) { return (L.withheld || []).find((w) => w && re.test(String(w.key || ""))); }
+  const HERO_KEYS = /^(composite(_age)?|cosinor(_age)?|bio_?age)$/i;
+
+  function sparkline(trend) {
+    const pts = (trend || []).filter((t) => t && isNum(t.value));
+    if (pts.length < 2) return "";
+    const W = 120, H = 28, P = 3;
+    const xs = pts.map((t, i) => { const d = Date.parse(t.as_of); return isFinite(d) ? d : i; });
+    const ys = pts.map((t) => t.value);
+    const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+    let y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys);
+    if (y1 - y0 < 0.5) { const m = (y0 + y1) / 2; y0 = m - 0.25; y1 = m + 0.25; }
+    const sx = (x) => x1 === x0 ? W / 2 : P + (x - x0) / (x1 - x0) * (W - 2 * P);
+    const sy = (y) => H - P - (y - y0) / (y1 - y0) * (H - 2 * P);
+    const d = pts.map((t, i) => sx(xs[i]).toFixed(1) + "," + sy(ys[i]).toFixed(1)).join(" ");
+    const label = "Effective age " + pts.map((t) => t.value.toFixed(1)).join(", then ");
+    return '<svg class="spark" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="' + esc(label) + '">' +
+      '<polyline points="' + d + '" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  function monthsSpan(trend) {
+    const ds = (trend || []).map((t) => t && Date.parse(t.as_of)).filter((d) => isFinite(d));
+    if (ds.length < 2) return null;
+    return Math.max(1, Math.round((Math.max.apply(null, ds) - Math.min.apply(null, ds)) / (30.44 * 864e5)));
+  }
+  function assumeBox(list, title) {
+    if (!Array.isArray(list) || !list.length) return "";
+    const txt = (a) => typeof a === "string" ? a : (a && (a.text || a.note)) || JSON.stringify(a);
+    const sorted = list.slice().sort((a, b) => (/independen/i.test(txt(b)) ? 1 : 0) - (/independen/i.test(txt(a)) ? 1 : 0));
+    return '<div class="assume"><span class="k">' + esc(title || "Assumptions in this number") + "</span><ul>" +
+      sorted.map((a) => "<li>" + esc(txt(a)) + "</li>").join("") + "</ul></div>";
+  }
+
+  function renderBio(L) {
+    const bio = L.bio_age || {};
+    const cp = bio.composite;
+    const p = L.profile || {};
+    const entered = Array.isArray(p.entered) ? p.entered : [];
+    let body, pill = "";
+    if (cp && isNum(cp.value)) {
+      const age = isNum(cp.chronological_age) ? cp.chronological_age : p.age_years;
+      const adv = isNum(cp.advance_years) ? cp.advance_years : (isNum(age) ? cp.value - age : null);
+      const a = fmtSigned(adv);
+      const ageNote = isNum(age) ? " (" + fmtValue(age) + (state.sample ? ", synthetic" : entered.includes("age_years") ? ", you entered" : "") + ")" : "";
+      const conf = String(cp.confidence || "").toLowerCase();
+      if (conf) pill = '<span class="pill ' + esc(conf) + '">' + esc(conf) + " confidence</span>";
+      let pace = "";
+      if (isNum(cp.pace_years_per_year)) {
+        // Pace of aging: biological years per calendar year. 1.0 = one year per year (WHOOP Pace of Aging / DunedinPACE convention).
+        const pv = cp.pace_years_per_year;
+        const cls = pv > 1.05 ? "cost" : pv < 0.95 ? "credit" : "neutral";
+        const n = monthsSpan(cp.trend);
+        pace = '<p class="pace"><span>Pace over the last ' + (n ? n + " " + plural(n, "month", "months") : "few months") +
+          ': <span class="v ' + cls + '">' + pv.toFixed(2) + '×</span> <span class="muted">(1.0 = one biological year per calendar year)</span></span>' + sparkline(cp.trend) + "</p>";
+      }
+      const cs = Array.isArray(cp.contributions) ? cp.contributions : [];
+      let contrib = "";
+      if (cs.length) {
+        const sum = cs.reduce((t, c) => t + (isNum(c.years_vs_population) ? c.years_vs_population : 0), 0);
+        const sumNote = isNum(adv) && Math.abs(sum - adv) < 0.05 ? "These add up to the " + a.text + "." : "These sum to " + fmtSigned(sum).text + "; the headline figure is " + a.text + ".";
+        contrib = '<ul class="contrib" aria-label="Contributions by lever">' + cs.map((c) => {
+          const y = fmtSigned(c.years_vs_population);
+          const band = c.band && c.population_band ? "You " + esc(c.band) + " · typical " + esc(c.population_band) : esc(c.band || "");
+          return "<li>" + '<span class="c-label">' + esc(c.label || labelFor(c.key)) + "</span>" +
+            '<span class="c-yrs serif-num ' + y.cls + '">' + y.text + "</span>" + (band ? '<span class="c-band">' + band + "</span>" : "") + "</li>";
+        }).join("") + "</ul>" + '<p class="sum-note">' + esc(sumNote) + " Years vs a population-typical person, one row per lever.</p>";
+      }
+      const how = (cp.rule || cp.citation || (cp.assumptions && cp.assumptions.length))
+        ? '<details class="how"><summary>How this number is made</summary>' +
+            (cp.rule ? '<p><span class="k">Rule</span>' + esc(cp.rule) + "</p>" : "") +
+            (cp.citation ? '<p><span class="k">Source</span>' + citeHTML(cp.citation) + "</p>" : "") +
+            assumeBox(cp.assumptions) + "</details>"
+        : "";
+      body = '<div class="hero-num">' +
+          '<div class="hero-big serif-num">' + cp.value.toFixed(1) + "<small>yrs</small></div>" +
+          (isNum(adv) ? '<p class="hero-adv"><span class="adv ' + a.cls + '">' + a.text + " " + plural(Math.abs(adv), "year", "years") + "</span> vs calendar age" + esc(ageNote) + "</p>" : "") +
+          pace + "</div>" + contrib + how;
+    } else {
+      const w = withheldFor(L, /^composite/i);
+      const needsAge = !isNum(p.age_years);
+      const reason = (w && w.reason) || (needsAge ? "needs chronological age — enter it above" : "the engine didn't return a composite for this export");
+      const ageLink = /\bage\b/i.test(reason) ? ' <a href="#age" class="anchor-link" data-focus-age>Enter your age</a>; the page recomputes as you type.' : "";
+      body = '<p class="bio-empty-title">Not estimated from this export</p>' +
+        '<p class="bio-empty-reason">' + escInline(String(reason).replace(/\.$/, "")) + ". We don't guess a number we can't compute." + ageLink + "</p>";
+    }
+    return '<section class="block" aria-label="Effective age"><div class="card hero">' +
+      '<div class="hero-top"><p class="eyebrow">Effective age · from your levers</p>' + pill + "</div>" + body + "</div></section>";
+  }
+
+  function tile(title, inner, cite) {
+    return '<div class="tile"><p class="eyebrow">' + esc(title) + "</p>" + inner + (cite ? '<p class="tile-cite">' + citeHTML(cite) + "</p>" : "") + "</div>";
+  }
+  function firstNote(x) {
+    const n = x && Array.isArray(x.notes) ? x.notes.filter((v) => typeof v === "string") : [];
+    return n.length ? '<p class="tile-note">' + esc(n[0]) + "</p>" : "";
+  }
+  function renderSecondary(L) {
+    const bio = L.bio_age || {};
+    const out = [];
+    const w = withheldFor(L, /^cosinor/i);
+    const r = w && w.reason ? String(w.reason) : "";
+    const msg = !r || /accelerometer|enmo/i.test(r) ? "needs raw accelerometer data — not in WHOOP, Apple Health or Oura exports" : r.replace(/\.$/, "");
+    out.push(tile("CosinorAge", '<p class="tile-empty">' + escInline(msg) + "</p>"));
+    const fa = bio.fitness_age;
+    if (fa && isNum(fa.value)) {
+      out.push(tile("Fitness age", '<div class="tile-val serif-num">' + fmtValue(fa.value) + "<small>yrs</small></div>" +
+        (isNum(fa.vo2max) ? '<p class="tile-sub">from VO₂max ' + fa.vo2max.toFixed(1) + (fa.sex ? " · " + esc(fa.sex) + " norms" : "") + "</p>" : "") +
+        firstNote(fa), fa.citation));
+    } else {
+      out.push(tile("Fitness age", '<p class="tile-empty">needs VO₂max readings and sex' + (L.source === "whoop" ? "; WHOOP exports carry no VO₂max" : "") + "</p>"));
+    }
+    const hv = bio.hrv_age_equivalent;
+    if (hv && isNum(hv.value)) {
+      out.push(tile("HRV age-equivalent", '<div class="tile-val serif-num">' + fmtValue(hv.value) + "<small>yrs</small></div>" +
+        ((hv.bin || hv.closest_bin) ? '<p class="tile-sub">matches ' + esc(hv.bin || hv.closest_bin) + " norms</p>" : "") +
+        '<p class="tile-note">Norm match, not a clock.</p>', hv.citation));
+    }
+    return '<section class="block" aria-labelledby="sec-h"><p class="eyebrow" id="sec-h">Other estimates · each on its own method</p><div class="tiles">' + out.join("") + "</div></section>";
+  }
+
+  function renderLever(lv, i, top) {
+    const y = fmtYears(lv.years);
+    const conf = String(lv.confidence || "").toLowerCase();
+    const pill = conf ? '<span class="pill ' + esc(conf) + '">' + esc(conf) + " confidence</span>" : "";
+    const unit = lv.unit ? " " + esc(lv.unit) : "";
+    const nd = isNum(lv.n_days) ? '<span class="n">' + lv.n_days + plural(lv.n_days, " day", " days") + (isNum(lv.window_days) ? " of " + lv.window_days : "") + "</span>" : "";
+    const bands = (lv.band || lv.reference_band) ? esc(lv.band || "—") + ' <span class="arrow">→</span> ' + esc(lv.reference_band || "—") : "";
+    const isTop = top && isNum(lv.years_recoverable) && lv.years_recoverable > 0;
+    const lede = isTop ? '<p class="lv-lede">Moving to ' + esc(lv.reference_band) + " is worth about " + lv.years_recoverable.toFixed(1) + " " + plural(lv.years_recoverable, "year", "years") + ".</p>" : "";
+    return '<li><details class="lever"><summary>' +
+        '<span class="rank serif-num">' + (i + 1) + "</span>" +
+        '<div class="lv-head">' + (isTop ? '<span class="start">Start here</span>' : "") +
+          '<p class="lv-label">' + esc(lv.label || labelFor(lv.key)) + "</p>" +
+          '<p class="lv-value">You: <strong>' + fmtValue(lv.your_value) + "</strong>" + unit + nd + "</p></div>" +
+        '<div class="yrs ' + y.cls + '"><span class="big serif-num">' + y.text + '</span><span class="unit">yrs</span></div>' +
+        '<div class="lv-bands">' + (bands ? "<span>" + bands + "</span>" : "") + '<span class="hr">HR ' + fmtHR(lv.hr_vs_reference) + "</span>" + pill + "</div>" +
+        lede + '<span class="why-toggle">Why this number</span></summary>' +
+      '<div class="why">' + (lv.rule ? '<p><span class="k">Rule</span>' + esc(lv.rule) + "</p>" : "") +
+        (lv.citation ? '<p><span class="k">Source</span>' + citeHTML(lv.citation) + "</p>" : "") +
+        (Array.isArray(lv.notes) && lv.notes.length ? '<p><span class="k">Notes</span>' + lv.notes.map(esc).join(" ") + "</p>" : "") +
+        assumeBox(lv.assumptions) + "</div></details></li>";
+  }
+  function renderLedger(L) {
+    const levers = Array.isArray(L.levers) ? L.levers : [];
+    if (!levers.length) return '<section class="block"><h2 class="h2">The ledger</h2><p class="h2-sub">No lever could be computed from this export. See what was withheld below.</p></section>';
+    return '<section class="block" aria-labelledby="ledger-h"><h2 class="h2" id="ledger-h">The ledger</h2>' +
+      '<p class="h2-sub">Ranked by the years you could recover. Plus is a cost against the reference band; minus is a credit.</p>' +
+      '<ol class="ledger">' + levers.map((lv, i) => renderLever(lv, i, i === 0)).join("") + "</ol>" +
+      (L.ranking_note ? '<p class="ranking-note">' + esc(L.ranking_note) + "</p>" : "") + "</section>";
+  }
+  function renderWithheld(L) {
+    const items = (L.withheld || []).filter((w) => w && !HERO_KEYS.test(String(w.key || "")));
+    if (!items.length) return "";
+    return '<section class="block" aria-labelledby="wh-h"><h2 class="h2" id="wh-h">Not computed</h2>' +
+      '<p class="h2-sub">Missing input means no number. We don\'t impute.</p><ul class="plain-list withheld">' +
+      items.map((w) => "<li>Not computed: <b>" + esc(w.label || labelFor(w.key)) + "</b> — " + escInline(w.reason || "no reason given") + "</li>").join("") + "</ul></section>";
+  }
+  function renderContext(L) {
+    const items = Array.isArray(L.context) ? L.context : [];
+    if (!items.length) return "";
+    return '<section class="block" aria-labelledby="ctx-h"><h2 class="h2" id="ctx-h">Context</h2>' +
+      '<p class="h2-sub">Where you sit against reference populations. No years attached.</p><ul class="plain-list">' +
+      items.map((c) => {
+        const pct = /percentile|pct|%ile/i.test(String(c.unit || ""));
+        const val = isNum(c.your_value) ? (pct ? ordinal(c.your_value) : fmtValue(c.your_value) + (c.unit ? " " + esc(c.unit) : "")) : "";
+        const label = c.label || labelFor(String(c.key || "").replace(/_percentile$/, "")) + (c.closest_bin ? " vs age norms" : "");
+        return "<li>" + (val ? '<span class="ctx-val serif-num">' + val + "</span>" : "") + '<span class="ctx-label">' + esc(label) + "</span>" +
+          (c.note ? '<p class="ctx-note">' + esc(c.note) + "</p>" : "") + (c.citation ? '<p class="ctx-cite">' + citeHTML(c.citation) + "</p>" : "") + "</li>";
+      }).join("") + "</ul></section>";
+  }
+
+  // ---------- render: your week ----------
+  function bodyPills(b) {
+    const out = [];
+    if (b.recovery) out.push('<span class="bpill ' + esc(b.recovery) + '">Recovery ' + esc(b.recovery) + (isNum(b.recovery_pct) ? " " + Math.round(b.recovery_pct) + "%" : "") + "</span>");
+    if (isNum(b.sleep_debt_min)) out.push('<span class="bpill' + (b.sleep_debt_high ? " flag" : "") + '">Sleep debt ' + Math.round(b.sleep_debt_min) + " min</span>");
+    if (b.rhr_rising) out.push('<span class="bpill flag">RHR rising ' + b.rhr_rising_days + " " + plural(b.rhr_rising_days, "day", "days") + "</span>");
+    else if (b.rhr_rising === false) out.push('<span class="bpill">RHR steady</span>');
+    return out;
+  }
+  function renderWeek(L) {
+    const W = L.week_plan;
+    const head = '<h2 class="h2" id="week-h">Your week</h2>';
+    if (!W) {
+      return '<section class="block" aria-labelledby="week-h">' + head +
+        '<p class="h2-sub">Your body as of the export\'s last day, your calendar for the next 7 days. WHOOP knows one of these.</p>' +
+        '<div class="empty-card">Add a calendar above to see the week. Your .ics file is read in this tab, like the export.</div></section>';
+    }
+    const b = W.body || {};
+    const asOf = shortDate(b.as_of || W.start);
+    const pills = bodyPills(b);
+    const today = localToday();
+    const days = (W.days || []).map((d) => {
+      const ld = d.load || {};
+      const loadBits = [];
+      loadBits.push(isNum(ld.meeting_hours) ? (ld.meeting_hours ? (+ld.meeting_hours.toFixed(1)) + " h meetings" : "No meetings") : "—");
+      if (ld.back_to_back) loadBits.push(ld.back_to_back + " back-to-back");
+      if (ld.first_event_time) loadBits.push("first " + esc(ld.first_event_time));
+      if (ld.evening_event) loadBits.push("evening event");
+      const hard = (ld.hard_events || []).map((h) => '<span class="hard" title="' + esc(h) + '">' + esc(h) + "</span>").join("");
+      const strip = '<div class="strip">' + (pills.length ? pills.join("") : '<span class="asof">No body signals in this export</span>') +
+        '<span class="asof">as of ' + esc(asOf) + "</span></div>";
+      const sugg = (d.suggestions || []).length
+        ? '<ul class="sugg">' + d.suggestions.map((s) => '<li><p class="t">' + esc(s.text) + '</p><p class="w">' + esc(s.why) + "</p></li>").join("") + "</ul>"
+        : '<p class="quiet">Nothing to change.</p>';
+      const isToday = d.date === today;
+      return '<li class="day' + (isToday ? " is-today" : "") + '">' +
+        '<div class="day-head"><span class="day-wd">' + esc(isToday ? "Today" : d.weekday) + '</span><span class="day-date">' + esc((isToday ? d.weekday + " " : "") + shortDate(d.date)) + "</span></div>" +
+        '<p class="day-load">' + loadBits.join('<span class="sep">·</span>') + "</p>" +
+        (hard ? '<div class="chips">' + hard + "</div>" : "") + strip + sugg + "</li>";
+    }).join("");
+    const notes = (W.notes || []).length ? '<ul class="notes-small">' + W.notes.map((n) => "<li>" + esc(n) + "</li>").join("") + "</ul>" : "";
+    return '<section class="block" aria-labelledby="week-h"><div class="week-wide">' + head +
+      '<p class="h2-sub">Your body as of ' + esc(asOf) + ", your calendar for the next 7 days. WHOOP knows one of these." +
+      (state.icsSample ? ' <span class="sample-tag">sample calendar</span>' : "") + "</p>" +
+      '<p class="body-line">' + (pills.length ? pills.join("") : "No recovery, sleep-debt or resting-heart-rate signal in this export.") +
+      '<span class="asof">as of ' + esc(asOf) + " · carried forward</span>" +
+      '<span class="asof">' + (isNum(W.week_meeting_hours) ? (+W.week_meeting_hours.toFixed(1)) + " h of meetings this week" : "") + "</span></p>" +
+      '<ol class="week-grid">' + days + "</ol>" + notes + "</div>" + assumeBox(W.assumptions, "Assumptions in this plan") + "</section>";
+  }
+
+  // ---------- render: suggestion with a receipt ----------
+  function leverLabel(L, key) { const l = (L.levers || []).find((x) => x.key === key); return l ? l.label : labelFor(key); }
+  function fmtMetric(v, m) {
+    if (!isNum(v)) return "—";
+    const d = (METRICS[m] || {}).d;
+    if (d === 0 || Math.abs(v) >= 1000) return Math.round(v).toLocaleString("en-US");
+    return v.toFixed(d == null ? 1 : d);
+  }
+  function currentExperiment(L) {
+    const props = (L.experiments && L.experiments.proposals) || [];
+    if (!props.length) return null;
+    let exp = state.exp;
+    if (!exp && !state.sample) exp = recall(EXP_KEY);
+    if (!exp && state.sample) exp = { lever: props[0].lever, start: addDays(L.coverage.last, -20) };
+    if (!exp || typeof exp !== "object") exp = { lever: props[0].lever, start: "" };
+    if (!props.some((p) => p.lever === exp.lever)) exp = { lever: props[0].lever, start: exp.start || "" };
+    state.exp = exp;
+    return exp;
+  }
+  function renderReceiptBody(L, exp) {
+    if (!exp.start) return '<p class="quiet">Set the day you started to see the receipt.</p>';
+    let r;
+    try { r = AL.receipt(state.ds, state.rules, exp.lever, exp.start); } catch (e) { return '<p class="quiet">' + esc(errText(e)) + "</p>"; }
+    const ex = state.rules.experiments || {};
+    const need = ex.min_days_after || 14;
+    const mets = r.metrics || [];
+    let status;
+    if (r.status === "not_yet") {
+      const n = Math.min(r.days_elapsed || 0, need);
+      status = "Not yet: " + n + " of " + need + " days after start. Check back after " + shortDate(addDays(exp.start, need - 1)) + " with a fresh export.";
+    } else if (r.status === "ok" || r.status === "partial") {
+      const beyond = mets.filter((m) => m.status === "ok" && m.beyond_noise).length;
+      status = beyond ? beyond + " of " + mets.filter((m) => m.status === "ok").length + " measures moved more than your own noise." : "Every measure is still inside your own noise.";
+    } else status = "No receipt yet: " + (mets.find((m) => m.reason) || {}).reason;
+    const rows = mets.map((m) => {
+      const meta = METRICS[m.metric] || { label: labelFor(m.metric), unit: "", better: 1 };
+      const name = '<td><b>' + esc(meta.label) + '</b><span class="rc-unit">' + esc(meta.unit) + "</span></td>";
+      if (m.status !== "ok") {
+        const why = m.status === "not_yet" ? "not yet: " + (m.n_after || 0) + " of " + (m.need || need) + " days after start" : (m.reason || m.status);
+        return "<tr>" + name + '<td class="n" data-k="Before">' + fmtMetric(m.mean_before, m.metric) + '</td><td class="n" data-k="After">—</td><td class="n" data-k="Change">—</td><td class="verdict">' + esc(why) + "</td></tr>";
+      }
+      const dlt = m.delta, good = m.beyond_noise ? ((dlt > 0) === (meta.better > 0) ? "good" : "bad") : "";
+      const sign = dlt > 0 ? "+" : dlt < 0 ? "−" : "";
+      return "<tr>" + name +
+        '<td class="n" data-k="Before">' + fmtMetric(m.mean_before, m.metric) + '<span class="rc-unit">' + m.n_before + " days</span></td>" +
+        '<td class="n" data-k="After">' + fmtMetric(m.mean_after, m.metric) + '<span class="rc-unit">' + m.n_after + " days</span></td>" +
+        '<td class="n" data-k="Change"><span class="rc-delta ' + good + '">' + sign + fmtMetric(Math.abs(dlt), m.metric) + "</span>" +
+          '<span class="rc-ci">95% CI ' + fmtMetric(m.ci_low, m.metric) + " to " + fmtMetric(m.ci_high, m.metric) + "</span></td>" +
+        '<td class="verdict' + (m.beyond_noise ? " beyond" : "") + '">' + (m.beyond_noise ? "Bigger than your own noise" : "Inside your noise") + "</td></tr>";
+    }).join("");
+    const win = r.status === "not_yet" ? "" : '<p class="rc-head">Before: the ' + (ex.min_days_before || 14) + " days to " + esc(shortDate(addDays(exp.start, -1))) +
+      ". After: " + esc(shortDate(exp.start)) + " to the export's last day (" + esc(shortDate(L.coverage.last)) + ").</p>";
+    return '<p class="rc-status">' + esc(status) + "</p>" + win +
+      (r.status === "not_yet" ? "" : '<table class="rc-table"><thead><tr><th>Measure</th><th class="n">Before</th><th class="n">After</th><th class="n">Change</th><th>Verdict</th></tr></thead><tbody>' + rows + "</tbody></table>") +
+      assumeBox([r.note].concat(r.assumptions || []), "Read this as");
+  }
+  function renderReceipt(L) {
+    const props = (L.experiments && L.experiments.proposals) || [];
+    const head = '<h2 class="h2" id="rc-h">Suggestion with a receipt</h2><p class="h2-sub">One change, a start date, and a before/after on your own data.</p>';
+    if (!props.length) {
+      return '<section class="block" aria-labelledby="rc-h">' + head +
+        '<div class="empty-card">Nothing to propose: every lever with a protocol is already in its reference band.</div></section>';
+    }
+    const exp = currentExperiment(L);
+    const p = props.find((x) => x.lever === exp.lever) || props[0];
+    const yrs = isNum(p.years_recoverable) ? " · worth up to " + p.years_recoverable.toFixed(1) + " " + plural(p.years_recoverable, "year", "years") : "";
+    const measure = (p.metrics || []).map((m) => (METRICS[m] || {}).label || labelFor(m)).join(", ");
+    const opts = props.map((x) => '<option value="' + esc(x.lever) + '"' + (x.lever === p.lever ? " selected" : "") + ">" + esc(x.name + " — " + leverLabel(L, x.lever)) + "</option>").join("");
+    return '<section class="block" aria-labelledby="rc-h">' + head +
+      '<div class="card proposal">' +
+        '<div class="prop-top"><p class="eyebrow">Try this · ' + esc(leverLabel(L, p.lever)) + esc(yrs) + "</p>" +
+          (p === props[0] ? '<span class="pill">top proposal</span>' : "") + "</div>" +
+        '<p class="prop-name">' + esc(p.name) + "</p>" +
+        '<p class="prop-change">' + esc(p.change) + "</p>" +
+        '<dl class="prop-meta">' +
+          "<div><dt>Duration</dt><dd>" + esc(p.duration_days) + " days</dd></div>" +
+          "<div><dt>We will measure</dt><dd>" + esc(measure) + "</dd></div>" +
+          "<div><dt>Expected</dt><dd>" + esc(p.expected) + "</dd></div>" +
+          "<div><dt>Source</dt><dd>" + citeHTML(p.citation) + "</dd></div>" +
+        "</dl>" +
+        '<div class="controls">' +
+          '<div><label class="field-label" for="rc-lever">Change</label><select class="select" id="rc-lever">' + opts + "</select></div>" +
+          '<div><label class="field-label" for="rc-start">I started on…</label><input class="date-input" type="date" id="rc-start" value="' + esc(exp.start || "") + '" max="' + esc(L.coverage.last || "") + '"></div>' +
+          (state.sample ? '<p class="helper" style="margin:0">Sample: a start date 20 days before the export ends.</p>' : "") +
+        "</div>" +
+        '<div class="receipt" id="rc-body">' + renderReceiptBody(L, exp) + "</div>" +
+      "</div></section>";
+  }
+  function bindReceipt() {
+    const sel = $("rc-lever"), date = $("rc-start");
+    if (!sel || !date) return;
+    const update = (full) => {
+      state.exp = { lever: sel.value, start: date.value || "" };
+      if (!state.sample) store(EXP_KEY, state.exp);
+      if (full) { $("receipt-slot").innerHTML = renderReceipt(state.L); bindReceipt(); }
+      else $("rc-body").innerHTML = renderReceiptBody(state.L, state.exp);
+    };
+    sel.addEventListener("change", () => update(true));
+    date.addEventListener("change", () => update(false));
+  }
+
+  // ---------- render: page ----------
+  function render(L, opts) {
+    opts = opts || {};
+    renderFooter(L);
+    renderLoaded();
+    const notice = state.sample
+      ? '<p class="notice"><b>Sample — synthetic person, not you.</b> A generated 35-year-old woman with 180 days of WHOOP-style data and a synthetic work calendar. Drop your own export above; it is read in this tab and never uploaded.</p>'
+      : "";
+    els.results.innerHTML = notice + renderCoverage(L) + renderBio(L) + renderSecondary(L) +
+      '<div id="week-slot">' + renderWeek(L) + "</div>" + renderLedger(L) +
+      '<div id="receipt-slot">' + renderReceipt(L) + "</div>" + renderWithheld(L) + renderContext(L);
+    els.results.querySelectorAll("[data-focus-age]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); focusAge(); }));
+    bindReceipt();
+    els.results.hidden = false;
+    const first = els.results.querySelector(".lever");
+    if (first) first.open = true;
+    if (opts.scroll) els.results.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  // ---------- start: the sample, complete at rest ----------
+  (async function init() {
+    if (!AL) { showError("The analysis engine (engine.js) did not load."); return; }
+    renderLoaded();
+    try { await getRules(); } catch (e) { showError("Couldn't load the rules (rules.yaml): " + errText(e)); return; }
+    await loadCalendar(null, { sample: true });
+    await loadSample({ scroll: false });
+  })();
+})();
+</script>
